@@ -43,11 +43,14 @@ That means graph structure is the primary memory model. Lexical retrieval, optio
 8. [MODULE_DB.md](./MODULE_DB.md)
 9. [MODULE_ROOT.md](./MODULE_ROOT.md)
 10. [TESTING.md](./TESTING.md)
-11. [EXPLORATORY_EVALUATION.md](./EXPLORATORY_EVALUATION.md)
-12. [CODE_INDEX.md](./CODE_INDEX.md)
-13. [REPOSITORY_ARTIFACTS.md](./REPOSITORY_ARTIFACTS.md)
-14. [DEPENDABILITY_PLAN.md](./DEPENDABILITY_PLAN.md)
-15. [DOCUMENTATION_COVERAGE.md](./DOCUMENTATION_COVERAGE.md)
+11. [EVAL_SUITES.md](./EVAL_SUITES.md) — side-by-side cheat sheet for the five end-to-end eval corpora (detailed / hard / large / regression / irl)
+12. [EXPLORATORY_EVALUATION.md](./EXPLORATORY_EVALUATION.md)
+13. [CODE_INDEX.md](./CODE_INDEX.md)
+14. [REPOSITORY_ARTIFACTS.md](./REPOSITORY_ARTIFACTS.md)
+15. [DEPENDABILITY_PLAN.md](./DEPENDABILITY_PLAN.md)
+16. [DOCUMENTATION_COVERAGE.md](./DOCUMENTATION_COVERAGE.md)
+17. [AUDIT_2026-05-06.md](./AUDIT_2026-05-06.md) — dated code audit of PAM as kayo's memory layer
+18. [EVAL_RESULTS_2026-05-06.md](./EVAL_RESULTS_2026-05-06.md) — dated end-to-end eval results (128 queries across 5 suites)
 
 ## Document Set
 

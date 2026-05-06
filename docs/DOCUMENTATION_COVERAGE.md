@@ -15,6 +15,7 @@ The docs set now distinguishes current baseline behavior from intended graph-nat
 | `pam/chat_agent.py` | Source module | `docs/MODULE_CLI.md` | Covered |
 | `pam/feedback.py` | Source module | `docs/MODULE_LIFECYCLE.md` | Covered |
 | `pam/lifecycle.py` | Source module | `docs/MODULE_LIFECYCLE.md` | Covered |
+| `pam/llm_clients.py` | Source module | `docs/TESTING.md`, `docs/EVAL_SUITES.md` | Covered |
 | `pam/db/__init__.py` | Package file | `docs/MODULE_DB.md` | Covered |
 | `pam/db/schema.py` | Source module | `docs/MODULE_DB.md` | Covered |
 | `pam/db/nodes.py` | Source module | `docs/MODULE_DB.md` | Covered |
@@ -39,9 +40,12 @@ The docs set now distinguishes current baseline behavior from intended graph-nat
 | Artifact | Kind | Primary Documentation | Status |
 | --- | --- | --- | --- |
 | `tests/test_cli.py` | Test module | `docs/TESTING.md` | Covered |
+| `tests/test_chat_agent.py` | Test module | `docs/TESTING.md` | Covered |
 | `tests/test_db.py` | Test module | `docs/TESTING.md` | Covered |
+| `tests/test_deterministic_fallback.py` | Test module | `docs/TESTING.md` | Covered |
 | `tests/test_ingestion.py` | Test module | `docs/TESTING.md` | Covered |
 | `tests/test_lifecycle.py` | Test module | `docs/TESTING.md` | Covered |
+| `tests/test_llm_clients.py` | Test module | `docs/TESTING.md` | Covered |
 | `tests/test_relations.py` | Test module | `docs/TESTING.md` | Covered |
 | `tests/test_retrieval.py` | Test module | `docs/TESTING.md` | Covered |
 | `tests/test_copilot_cli_eval.py` | Test module | `docs/TESTING.md` | Covered |
@@ -49,8 +53,11 @@ The docs set now distinguishes current baseline behavior from intended graph-nat
 | `tests/test_large_agent_eval.py` | Evaluation test module | `docs/TESTING.md` | Covered |
 | `tests/test_hard_agent_eval.py` | Evaluation test module | `docs/TESTING.md` | Covered |
 | `tests/hard_agent_eval_fixture.py` | Evaluation fixture builder | `docs/TESTING.md` | Covered |
-| `tests/fixtures/retrieval_regression_corpus.json` | Regression fixture | `docs/TESTING.md` | Covered |
-| `tests/fixtures/large_agent_eval_corpus.json` | Evaluation fixture | `docs/TESTING.md` | Covered |
+| `tests/regression_eval_fixture.py` | Evaluation fixture adapter | `docs/TESTING.md`, `docs/EVAL_SUITES.md` | Covered |
+| `tests/irl_eval_fixture.py` | Evaluation fixture loader | `docs/TESTING.md`, `docs/EVAL_SUITES.md` | Covered |
+| `tests/fixtures/retrieval_regression_corpus.json` | Regression fixture | `docs/TESTING.md`, `docs/EVAL_SUITES.md` | Covered |
+| `tests/fixtures/large_agent_eval_corpus.json` | Evaluation fixture | `docs/TESTING.md`, `docs/EVAL_SUITES.md` | Covered |
+| `tests/fixtures/irl_eval_corpus.json` | Evaluation fixture (real-world mess) | `docs/TESTING.md`, `docs/EVAL_SUITES.md` | Covered |
 
 ## Support And Runtime Artifacts
 
@@ -84,6 +91,9 @@ The docs set now distinguishes current baseline behavior from intended graph-nat
 | `docs/MODULE_LIFECYCLE.md` | Documentation | `docs/README.md` | Covered |
 | `docs/MODULE_CLI.md` | Documentation | `docs/README.md` | Covered |
 | `docs/TESTING.md` | Documentation | `docs/README.md` | Covered |
+| `docs/EVAL_SUITES.md` | Documentation (eval-suite cheat sheet) | `docs/README.md` | Covered |
+| `docs/EVAL_RESULTS_2026-05-06.md` | Documentation (dated eval run) | `docs/README.md` | Covered |
+| `docs/AUDIT_2026-05-06.md` | Documentation (dated audit) | `docs/README.md` | Covered |
 | `docs/EXPLORATORY_EVALUATION.md` | Documentation | `docs/README.md` | Covered |
 | `docs/RETRIEVAL_RELATIONS_PLAN.md` | Documentation | `docs/README.md` | Covered |
 | `docs/REPOSITORY_ARTIFACTS.md` | Documentation | `docs/README.md` | Covered |

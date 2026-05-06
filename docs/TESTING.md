@@ -21,11 +21,16 @@ The most important stale-doc fix is this: the current suite proves relation-awar
 ## Test Layout
 
 - `tests/test_cli.py`
+- `tests/test_chat_agent.py` *(added 2026-05-06: regression coverage for the cross-platform Copilot CLI lookup, lru_cache removal, and `answer_with_pam` cwd defaulting)*
+- `tests/test_llm_clients.py` *(added 2026-05-06: shared LLM primitives — claude_code subprocess provider, `unwrap_json_response`, consolidated LLMUnavailableError)*
+- `tests/test_deterministic_fallback.py` *(added 2026-05-06: contract test for the architecture's deterministic-fallback invariant — ingest + query both function with every LLM call forced unavailable)*
 - `tests/test_copilot_cli_eval.py`
 - `tests/test_detailed_agent_eval.py`
 - `tests/test_hard_agent_eval.py`
 - `tests/test_large_agent_eval.py`
 - `tests/hard_agent_eval_fixture.py`
+- `tests/regression_eval_fixture.py` *(added 2026-05-06: adapter that exposes the retrieval-regression corpus as a harness-runnable `--suite regression`)*
+- `tests/irl_eval_fixture.py` *(added 2026-05-06: real-world-mess fixture, queries are vague / typo / multi-hop / wrong-premise / demanding / time-relative / out-of-blue / negative)*
 - `tests/test_db.py`
 - `tests/test_ingestion.py`
 - `tests/test_lifecycle.py`
@@ -33,6 +38,7 @@ The most important stale-doc fix is this: the current suite proves relation-awar
 - `tests/test_retrieval.py`
 - `tests/fixtures/large_agent_eval_corpus.json`
 - `tests/fixtures/retrieval_regression_corpus.json`
+- `tests/fixtures/irl_eval_corpus.json` *(added 2026-05-06)*
 - `.tmp_manual_cli/detailed_memory_eval/run_detailed_eval.py`
 
 ## What The Current Suite Proves Well
@@ -194,10 +200,13 @@ This matters because the live-boundary eval harness has failure modes that diffe
 
 ### Fixtures
 
-- `tests/fixtures/retrieval_regression_corpus.json` validates direct lookup quality, paraphrase robustness, negative behavior, distractor handling, and top-hit stability for a curated subset of prompts
+- `tests/fixtures/retrieval_regression_corpus.json` validates direct lookup quality, paraphrase robustness, negative behavior, distractor handling, and top-hit stability for a curated subset of prompts. As of 2026-05-06 also runnable end-to-end via `--suite regression`.
 - `tests/fixtures/large_agent_eval_corpus.json` validates larger-scale mixed-content ingest plus direct, paraphrased, relationship, timeline, and negative-query behavior
 - `tests/hard_agent_eval_fixture.py` generates the hard-suite scenario catalog and is maintained test source
+- `tests/fixtures/irl_eval_corpus.json` (added 2026-05-06) is a hand-curated 31-item / 38-query corpus shaped like a working engineer's mid-month memory state. Stresses what the templated suites cannot: vague phrasing, typos, multi-hop reasoning (2/3/4 layers), false-premise pushback, demanding multi-part synthesis, time-relative queries, and entity-type colloquialisms ("who do I report to?"). Runnable via `--suite irl`.
 - `.tmp_manual_cli/detailed_memory_eval/run_detailed_eval.py` is maintained because the detailed suite imports it directly
+
+For a side-by-side description of what each end-to-end eval suite tests and how they differ, see `docs/EVAL_SUITES.md`. For the latest end-to-end run results and per-category miss diagnostics, see `docs/EVAL_RESULTS_2026-05-06.md`.
 
 ## What The Current Suite Does Not Yet Prove
 
@@ -283,7 +292,7 @@ But the acceptance story for the intended product is still incomplete until grap
 
 One practical wrinkle remains: not all test data lives under `tests/`. The detailed evaluation suite intentionally imports its authored fixture from `.tmp_manual_cli/detailed_memory_eval/run_detailed_eval.py`, so that scratch tree currently mixes disposable outputs with one checked-in test dependency.
 
-## Manual Copilot CLI Eval
+## End-to-end Eval Harness
 
 The automated test suite keeps retrieval deterministic by forcing parser fallback and stubbing ingestion enrichment. For a live-boundary check, use `scripts/run_copilot_cli_eval.py`.
 
@@ -291,28 +300,52 @@ For an automated but opt-in live test, run `tests/test_copilot_cli_eval.py` with
 
 ### What It Does
 
-- loads one of the checked-in evaluation suites
+- loads one of the checked-in evaluation suites (`detailed`, `hard`, `large`, `regression`, `irl`)
 - ingests that suite into an isolated database under `.tmp_manual_cli/copilot_cli_eval/<suite>/`
 - retrieves PAM context locally through `pam.agent_interface.query_for_agent`
-- asks GitHub Copilot CLI to answer from that retrieved context only, without MCP
+- asks the chosen backend (`copilot` or `claude`) to answer from that retrieved context only, without MCP
 - scores the returned answer against the suite expectations
+
+### Backends
+
+As of 2026-05-06 the harness accepts `--backend {copilot,claude}`. Default is `claude` so kayo evals run without a Copilot subscription.
+
+- `copilot`: shells out to `copilot -p PROMPT --model M --no-ask-user --stream off -s --output-format text`
+- `claude`: shells out to `claude -p PROMPT --model M --output-format text`
+
+The same Claude Code CLI can also serve PAM's *internal* LLM calls (summary, entity extraction, edge facts, query parsing) when `PAM_LLM_PROVIDER=claude_code`. This lets PAM operate end-to-end with no Anthropic / OpenAI API key — `claude` is the only credential. See `pam/llm_clients.py` for the subprocess primitives.
 
 ### Requirements
 
-- GitHub Copilot CLI installed and authenticated in the local environment
-- Node.js available on `PATH`
-- the PAM virtual environment at `.venv`
-- for the live automated test, `PAM_RUN_REAL_COPILOT_TESTS=1`
-- optional for the live automated test, `PAM_REAL_COPILOT_MODEL=<model-name>` to override the default model
+- One of: GitHub Copilot CLI on PATH, or Claude Code CLI (`claude`) on PATH
+- Python 3.10+ and the package installed via `pip install -e .[dev]`
+- For the live automated test, `PAM_RUN_REAL_COPILOT_TESTS=1`
 
 ### Example Commands
 
-- `c:/workdir/PAM/.venv/Scripts/python.exe scripts/run_copilot_cli_eval.py --suite large --model claude-opus-4.6 --max-queries 10`
-- `c:/workdir/PAM/.venv/Scripts/python.exe scripts/run_copilot_cli_eval.py --suite hard --model claude-opus-4.6 --max-queries 25 --include-misses`
-- `$env:PAM_RUN_REAL_COPILOT_TESTS = "1"; c:/workdir/PAM/.venv/Scripts/python.exe -m unittest tests.test_copilot_cli_eval -q`
+```bash
+# detailed suite, claude backend (default), default model
+python scripts/run_copilot_cli_eval.py --suite detailed --max-queries 30
+
+# hard suite, claude backend, with miss list
+python scripts/run_copilot_cli_eval.py --suite hard --backend claude \
+  --max-queries 25 --include-misses
+
+# IRL suite (the full 38 queries, real-world mess)
+python scripts/run_copilot_cli_eval.py --suite irl --backend claude \
+  --batch-size 10 --include-misses
+
+# Same as above but with PAM's internal LLM calls also routed to Claude Code
+PAM_LLM_PROVIDER=claude_code CLAUDE_CODE_MODEL=claude-haiku-4-5 \
+  python scripts/run_copilot_cli_eval.py --suite irl --backend claude
+
+# Opt-in live test against a real Copilot CLI
+PAM_RUN_REAL_COPILOT_TESTS=1 pytest tests/test_copilot_cli_eval.py
+```
 
 ### Notes
 
 - the harness sets `PAM_DB_PATH` and `PAM_LOG_PATH` to suite-specific temporary paths so it does not reuse the default repo database
-- the current prompt strategy gives Copilot a bounded, content-rich PAM retrieval block rather than asking Copilot to drive CLI tools itself
+- the current prompt strategy gives the backend a bounded, content-rich PAM retrieval block rather than asking it to drive CLI tools itself
 - negative cases expect `NO_ANSWER`; the harness normalizes light formatting around that token before scoring
+- per-suite scoring breakdown lives in `docs/EVAL_RESULTS_2026-05-06.md`
