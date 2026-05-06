@@ -1,0 +1,16 @@
+.venv/
+.tmp_copilot_mcp_shape/
+.tmp_*.txt
+
+__pycache__/
+**/__pycache__/
+*.py[cod]
+
+pam.db
+pam_log.jsonl
+
+.tmp_manual_cli/**
+!.tmp_manual_cli/
+!.tmp_manual_cli/detailed_memory_eval/
+.tmp_manual_cli/detailed_memory_eval/**
+!.tmp_manual_cli/detailed_memory_eval/run_detailed_eval.py

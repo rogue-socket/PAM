@@ -1,0 +1,2468 @@
+{
+  "corpus": [
+    {
+      "key": "aurora_ledger_note_v1",
+      "session": "large-eval-1",
+      "ingest_kind": "note",
+      "text": "Idea: Aurora Ledger target is 2026-05-19 if the first approval gate clears this week.",
+      "at": "2026-05-01"
+    },
+    {
+      "key": "aurora_ledger_note_v2",
+      "session": "large-eval-1",
+      "ingest_kind": "note",
+      "text": "Idea: revise Aurora Ledger target to 2026-05-26 because the export checksum still mislabels thawed invoices.",
+      "at": "2026-05-02"
+    },
+    {
+      "key": "aurora_ledger_source",
+      "session": "large-eval-1",
+      "ingest_kind": "file",
+      "text": "Aurora Ledger rollout brief\n\nThe revised Aurora Ledger plan moved the target from 2026-05-19 to 2026-05-26 because the export checksum still mislabels thawed invoices.\nAfter prewarming ledger shards, cold reconciliation fell to 310ms.\n\nThis brief is derived from the revised Aurora Ledger plan so the approval trail stays inspectable.\n",
+      "at": "2026-05-03",
+      "derived_from": "aurora_ledger_note_v2"
+    },
+    {
+      "key": "aurora_ledger_link",
+      "session": "large-eval-1",
+      "ingest_kind": "url",
+      "filename": "aurora_ledger_residency_note.html",
+      "title": "Aurora Ledger residency note",
+      "text": "<html>\n      <head>\n        <meta charset=\"utf-8\" />\n        <title>Aurora Ledger residency note</title>\n      </head>\n      <body>\n        <h1>Aurora Ledger residency note</h1>\n<p>Aurora Ledger snapshots stay in the Reykjavik ring until customer names are redacted.</p>\n<p>The boundary keeps Aurora Ledger data local and auditable during review handoffs.</p>\n      </body>\n    </html>\n",
+      "at": "2026-05-04"
+    },
+    {
+      "key": "aurora_ledger_event",
+      "session": "large-eval-1",
+      "ingest_kind": "event",
+      "text": "Aurora Ledger review on 2026-05-05: Mira Chen approved the revised plan after the checksum board replay.",
+      "at": "2026-05-05"
+    },
+    {
+      "key": "beacon_routing_note_v1",
+      "session": "large-eval-1",
+      "ingest_kind": "note",
+      "text": "Idea: Beacon Routing target is 2026-05-23 if the first approval gate clears this week.",
+      "at": "2026-05-05"
+    },
+    {
+      "key": "beacon_routing_note_v2",
+      "session": "large-eval-1",
+      "ingest_kind": "note",
+      "text": "Idea: revise Beacon Routing target to 2026-05-30 because dock redirects still duplicate overnight berth changes.",
+      "at": "2026-05-06"
+    },
+    {
+      "key": "beacon_routing_source",
+      "session": "large-eval-1",
+      "ingest_kind": "file",
+      "text": "Beacon Routing rollout brief\n\nThe revised Beacon Routing plan moved the target from 2026-05-23 to 2026-05-30 because dock redirects still duplicate overnight berth changes.\nAfter packing quay maps before handoff, handoff lookup fell to 321ms.\n\nThis brief is derived from the revised Beacon Routing plan so the approval trail stays inspectable.\n",
+      "at": "2026-05-07",
+      "derived_from": "beacon_routing_note_v2"
+    },
+    {
+      "key": "beacon_routing_link",
+      "session": "large-eval-1",
+      "ingest_kind": "url",
+      "filename": "beacon_routing_residency_note.html",
+      "title": "Beacon Routing residency note",
+      "text": "<html>\n      <head>\n        <meta charset=\"utf-8\" />\n        <title>Beacon Routing residency note</title>\n      </head>\n      <body>\n        <h1>Beacon Routing residency note</h1>\n<p>Beacon Routing snapshots stay in the Bergen vault until customer names are redacted.</p>\n<p>The boundary keeps Beacon Routing data local and auditable during review handoffs.</p>\n      </body>\n    </html>\n",
+      "at": "2026-05-08"
+    },
+    {
+      "key": "beacon_routing_event",
+      "session": "large-eval-1",
+      "ingest_kind": "event",
+      "text": "Beacon Routing review on 2026-05-09: Owen Vale approved the revised plan after the quay handoff simulation.",
+      "at": "2026-05-09"
+    },
+    {
+      "key": "cascade_forms_note_v1",
+      "session": "large-eval-1",
+      "ingest_kind": "note",
+      "text": "Idea: Cascade Forms target is 2026-05-27 if the first approval gate clears this week.",
+      "at": "2026-05-09"
+    },
+    {
+      "key": "cascade_forms_note_v2",
+      "session": "large-eval-1",
+      "ingest_kind": "note",
+      "text": "Idea: revise Cascade Forms target to 2026-06-03 because customs packets still drop handwritten cargo marks.",
+      "at": "2026-05-10"
+    },
+    {
+      "key": "cascade_forms_source",
+      "session": "large-eval-1",
+      "ingest_kind": "file",
+      "text": "Cascade Forms rollout brief\n\nThe revised Cascade Forms plan moved the target from 2026-05-27 to 2026-06-03 because customs packets still drop handwritten cargo marks.\nAfter grouping customs pages by vessel lane, manifest assembly fell to 332ms.\n\nThis brief is derived from the revised Cascade Forms plan so the approval trail stays inspectable.\n",
+      "at": "2026-05-11",
+      "derived_from": "cascade_forms_note_v2"
+    },
+    {
+      "key": "cascade_forms_link",
+      "session": "large-eval-1",
+      "ingest_kind": "url",
+      "filename": "cascade_forms_residency_note.html",
+      "title": "Cascade Forms residency note",
+      "text": "<html>\n      <head>\n        <meta charset=\"utf-8\" />\n        <title>Cascade Forms residency note</title>\n      </head>\n      <body>\n        <h1>Cascade Forms residency note</h1>\n<p>Cascade Forms snapshots stay in the Nuuk shelf until customer names are redacted.</p>\n<p>The boundary keeps Cascade Forms data local and auditable during review handoffs.</p>\n      </body>\n    </html>\n",
+      "at": "2026-05-12"
+    },
+    {
+      "key": "cascade_forms_event",
+      "session": "large-eval-1",
+      "ingest_kind": "event",
+      "text": "Cascade Forms review on 2026-05-13: Priya Nordin approved the revised plan after the customs bundle rehearsal.",
+      "at": "2026-05-13"
+    },
+    {
+      "key": "drift_signals_note_v1",
+      "session": "large-eval-1",
+      "ingest_kind": "note",
+      "text": "Idea: Drift Signals target is 2026-05-31 if the first approval gate clears this week.",
+      "at": "2026-05-13"
+    },
+    {
+      "key": "drift_signals_note_v2",
+      "session": "large-eval-1",
+      "ingest_kind": "note",
+      "text": "Idea: revise Drift Signals target to 2026-06-07 because storm relays still merge separate signal windows.",
+      "at": "2026-05-14"
+    },
+    {
+      "key": "drift_signals_source",
+      "session": "large-eval-1",
+      "ingest_kind": "file",
+      "text": "Drift Signals rollout brief\n\nThe revised Drift Signals plan moved the target from 2026-05-31 to 2026-06-07 because storm relays still merge separate signal windows.\nAfter splitting storm relays by watch window, signal replay fell to 343ms.\n\nThis brief is derived from the revised Drift Signals plan so the approval trail stays inspectable.\n",
+      "at": "2026-05-15",
+      "derived_from": "drift_signals_note_v2"
+    },
+    {
+      "key": "drift_signals_link",
+      "session": "large-eval-1",
+      "ingest_kind": "url",
+      "filename": "drift_signals_residency_note.html",
+      "title": "Drift Signals residency note",
+      "text": "<html>\n      <head>\n        <meta charset=\"utf-8\" />\n        <title>Drift Signals residency note</title>\n      </head>\n      <body>\n        <h1>Drift Signals residency note</h1>\n<p>Drift Signals snapshots stay in the Helsinki corridor until customer names are redacted.</p>\n<p>The boundary keeps Drift Signals data local and auditable during review handoffs.</p>\n      </body>\n    </html>\n",
+      "at": "2026-05-16"
+    },
+    {
+      "key": "drift_signals_event",
+      "session": "large-eval-1",
+      "ingest_kind": "event",
+      "text": "Drift Signals review on 2026-05-17: Lena Brooks approved the revised plan after the signal shadow drill.",
+      "at": "2026-05-17"
+    },
+    {
+      "key": "ember_archive_note_v1",
+      "session": "large-eval-1",
+      "ingest_kind": "note",
+      "text": "Idea: Ember Archive target is 2026-06-04 if the first approval gate clears this week.",
+      "at": "2026-05-17"
+    },
+    {
+      "key": "ember_archive_note_v2",
+      "session": "large-eval-1",
+      "ingest_kind": "note",
+      "text": "Idea: revise Ember Archive target to 2026-06-11 because archive snapshots still omit the final thaw cycle.",
+      "at": "2026-05-18"
+    },
+    {
+      "key": "ember_archive_source",
+      "session": "large-eval-1",
+      "ingest_kind": "file",
+      "text": "Ember Archive rollout brief\n\nThe revised Ember Archive plan moved the target from 2026-06-04 to 2026-06-11 because archive snapshots still omit the final thaw cycle.\nAfter pinning archive manifests before thaw, archive wake-up fell to 354ms.\n\nThis brief is derived from the revised Ember Archive plan so the approval trail stays inspectable.\n",
+      "at": "2026-05-19",
+      "derived_from": "ember_archive_note_v2"
+    },
+    {
+      "key": "ember_archive_link",
+      "session": "large-eval-1",
+      "ingest_kind": "url",
+      "filename": "ember_archive_residency_note.html",
+      "title": "Ember Archive residency note",
+      "text": "<html>\n      <head>\n        <meta charset=\"utf-8\" />\n        <title>Ember Archive residency note</title>\n      </head>\n      <body>\n        <h1>Ember Archive residency note</h1>\n<p>Ember Archive snapshots stay in the Kirkenes ledger until customer names are redacted.</p>\n<p>The boundary keeps Ember Archive data local and auditable during review handoffs.</p>\n      </body>\n    </html>\n",
+      "at": "2026-05-20"
+    },
+    {
+      "key": "ember_archive_event",
+      "session": "large-eval-1",
+      "ingest_kind": "event",
+      "text": "Ember Archive review on 2026-05-21: Tariq Hale approved the revised plan after the archive rollback demo.",
+      "at": "2026-05-21"
+    },
+    {
+      "key": "fjord_notes_note_v1",
+      "session": "large-eval-2",
+      "ingest_kind": "note",
+      "text": "Idea: Fjord Notes target is 2026-06-08 if the first approval gate clears this week.",
+      "at": "2026-05-21"
+    },
+    {
+      "key": "fjord_notes_note_v2",
+      "session": "large-eval-2",
+      "ingest_kind": "note",
+      "text": "Idea: revise Fjord Notes target to 2026-06-15 because field note stitching still loses tide annotations.",
+      "at": "2026-05-22"
+    },
+    {
+      "key": "fjord_notes_source",
+      "session": "large-eval-2",
+      "ingest_kind": "file",
+      "text": "Fjord Notes rollout brief\n\nThe revised Fjord Notes plan moved the target from 2026-06-08 to 2026-06-15 because field note stitching still loses tide annotations.\nAfter staging tide annotations by berth, annotation merge fell to 365ms.\n\nThis brief is derived from the revised Fjord Notes plan so the approval trail stays inspectable.\n",
+      "at": "2026-05-23",
+      "derived_from": "fjord_notes_note_v2"
+    },
+    {
+      "key": "fjord_notes_link",
+      "session": "large-eval-2",
+      "ingest_kind": "url",
+      "filename": "fjord_notes_residency_note.html",
+      "title": "Fjord Notes residency note",
+      "text": "<html>\n      <head>\n        <meta charset=\"utf-8\" />\n        <title>Fjord Notes residency note</title>\n      </head>\n      <body>\n        <h1>Fjord Notes residency note</h1>\n<p>Fjord Notes snapshots stay in the Tromso archive until customer names are redacted.</p>\n<p>The boundary keeps Fjord Notes data local and auditable during review handoffs.</p>\n      </body>\n    </html>\n",
+      "at": "2026-05-24"
+    },
+    {
+      "key": "fjord_notes_event",
+      "session": "large-eval-2",
+      "ingest_kind": "event",
+      "text": "Fjord Notes review on 2026-05-25: Sofia Mendez approved the revised plan after the field-note comparison pass.",
+      "at": "2026-05-25"
+    },
+    {
+      "key": "glacier_alerts_note_v1",
+      "session": "large-eval-2",
+      "ingest_kind": "note",
+      "text": "Idea: Glacier Alerts target is 2026-06-12 if the first approval gate clears this week.",
+      "at": "2026-05-25"
+    },
+    {
+      "key": "glacier_alerts_note_v2",
+      "session": "large-eval-2",
+      "ingest_kind": "note",
+      "text": "Idea: revise Glacier Alerts target to 2026-06-19 because alert summaries still bury the first escalation state.",
+      "at": "2026-05-26"
+    },
+    {
+      "key": "glacier_alerts_source",
+      "session": "large-eval-2",
+      "ingest_kind": "file",
+      "text": "Glacier Alerts rollout brief\n\nThe revised Glacier Alerts plan moved the target from 2026-06-12 to 2026-06-19 because alert summaries still bury the first escalation state.\nAfter prefetching alert palettes before dusk, alert routing fell to 376ms.\n\nThis brief is derived from the revised Glacier Alerts plan so the approval trail stays inspectable.\n",
+      "at": "2026-05-27",
+      "derived_from": "glacier_alerts_note_v2"
+    },
+    {
+      "key": "glacier_alerts_link",
+      "session": "large-eval-2",
+      "ingest_kind": "url",
+      "filename": "glacier_alerts_residency_note.html",
+      "title": "Glacier Alerts residency note",
+      "text": "<html>\n      <head>\n        <meta charset=\"utf-8\" />\n        <title>Glacier Alerts residency note</title>\n      </head>\n      <body>\n        <h1>Glacier Alerts residency note</h1>\n<p>Glacier Alerts snapshots stay in the Odense lane until customer names are redacted.</p>\n<p>The boundary keeps Glacier Alerts data local and auditable during review handoffs.</p>\n      </body>\n    </html>\n",
+      "at": "2026-05-28"
+    },
+    {
+      "key": "glacier_alerts_event",
+      "session": "large-eval-2",
+      "ingest_kind": "event",
+      "text": "Glacier Alerts review on 2026-05-29: Jonas Park approved the revised plan after the alert color replay.",
+      "at": "2026-05-29"
+    },
+    {
+      "key": "harbor_sketch_note_v1",
+      "session": "large-eval-2",
+      "ingest_kind": "note",
+      "text": "Idea: Harbor Sketch target is 2026-06-16 if the first approval gate clears this week.",
+      "at": "2026-05-29"
+    },
+    {
+      "key": "harbor_sketch_note_v2",
+      "session": "large-eval-2",
+      "ingest_kind": "note",
+      "text": "Idea: revise Harbor Sketch target to 2026-06-23 because sketch imports still flatten crane-zone overlays.",
+      "at": "2026-05-30"
+    },
+    {
+      "key": "harbor_sketch_source",
+      "session": "large-eval-2",
+      "ingest_kind": "file",
+      "text": "Harbor Sketch rollout brief\n\nThe revised Harbor Sketch plan moved the target from 2026-06-16 to 2026-06-23 because sketch imports still flatten crane-zone overlays.\nAfter caching crane overlays before review, overlay render fell to 387ms.\n\nThis brief is derived from the revised Harbor Sketch plan so the approval trail stays inspectable.\n",
+      "at": "2026-05-31",
+      "derived_from": "harbor_sketch_note_v2"
+    },
+    {
+      "key": "harbor_sketch_link",
+      "session": "large-eval-2",
+      "ingest_kind": "url",
+      "filename": "harbor_sketch_residency_note.html",
+      "title": "Harbor Sketch residency note",
+      "text": "<html>\n      <head>\n        <meta charset=\"utf-8\" />\n        <title>Harbor Sketch residency note</title>\n      </head>\n      <body>\n        <h1>Harbor Sketch residency note</h1>\n<p>Harbor Sketch snapshots stay in the Aarhus frame until customer names are redacted.</p>\n<p>The boundary keeps Harbor Sketch data local and auditable during review handoffs.</p>\n      </body>\n    </html>\n",
+      "at": "2026-06-01"
+    },
+    {
+      "key": "harbor_sketch_event",
+      "session": "large-eval-2",
+      "ingest_kind": "event",
+      "text": "Harbor Sketch review on 2026-06-02: Avery Cole approved the revised plan after the sketch-board walkthrough.",
+      "at": "2026-06-02"
+    },
+    {
+      "key": "ion_dispatch_note_v1",
+      "session": "large-eval-2",
+      "ingest_kind": "note",
+      "text": "Idea: Ion Dispatch target is 2026-06-20 if the first approval gate clears this week.",
+      "at": "2026-06-02"
+    },
+    {
+      "key": "ion_dispatch_note_v2",
+      "session": "large-eval-2",
+      "ingest_kind": "note",
+      "text": "Idea: revise Ion Dispatch target to 2026-06-27 because dispatch receipts still repeat stale route tokens.",
+      "at": "2026-06-03"
+    },
+    {
+      "key": "ion_dispatch_source",
+      "session": "large-eval-2",
+      "ingest_kind": "file",
+      "text": "Ion Dispatch rollout brief\n\nThe revised Ion Dispatch plan moved the target from 2026-06-20 to 2026-06-27 because dispatch receipts still repeat stale route tokens.\nAfter batching route receipts by dock, dispatch settle fell to 398ms.\n\nThis brief is derived from the revised Ion Dispatch plan so the approval trail stays inspectable.\n",
+      "at": "2026-06-04",
+      "derived_from": "ion_dispatch_note_v2"
+    },
+    {
+      "key": "ion_dispatch_link",
+      "session": "large-eval-2",
+      "ingest_kind": "url",
+      "filename": "ion_dispatch_residency_note.html",
+      "title": "Ion Dispatch residency note",
+      "text": "<html>\n      <head>\n        <meta charset=\"utf-8\" />\n        <title>Ion Dispatch residency note</title>\n      </head>\n      <body>\n        <h1>Ion Dispatch residency note</h1>\n<p>Ion Dispatch snapshots stay in the Dublin parcel until customer names are redacted.</p>\n<p>The boundary keeps Ion Dispatch data local and auditable during review handoffs.</p>\n      </body>\n    </html>\n",
+      "at": "2026-06-05"
+    },
+    {
+      "key": "ion_dispatch_event",
+      "session": "large-eval-2",
+      "ingest_kind": "event",
+      "text": "Ion Dispatch review on 2026-06-06: Rina Shah approved the revised plan after the dispatch queue dry run.",
+      "at": "2026-06-06"
+    },
+    {
+      "key": "juniper_queue_note_v1",
+      "session": "large-eval-2",
+      "ingest_kind": "note",
+      "text": "Idea: Juniper Queue target is 2026-06-24 if the first approval gate clears this week.",
+      "at": "2026-06-06"
+    },
+    {
+      "key": "juniper_queue_note_v2",
+      "session": "large-eval-2",
+      "ingest_kind": "note",
+      "text": "Idea: revise Juniper Queue target to 2026-07-01 because queue snapshots still scramble late ferry batches.",
+      "at": "2026-06-07"
+    },
+    {
+      "key": "juniper_queue_source",
+      "session": "large-eval-2",
+      "ingest_kind": "file",
+      "text": "Juniper Queue rollout brief\n\nThe revised Juniper Queue plan moved the target from 2026-06-24 to 2026-07-01 because queue snapshots still scramble late ferry batches.\nAfter sorting ferry batches by departure band, queue replay fell to 409ms.\n\nThis brief is derived from the revised Juniper Queue plan so the approval trail stays inspectable.\n",
+      "at": "2026-06-08",
+      "derived_from": "juniper_queue_note_v2"
+    },
+    {
+      "key": "juniper_queue_link",
+      "session": "large-eval-2",
+      "ingest_kind": "url",
+      "filename": "juniper_queue_residency_note.html",
+      "title": "Juniper Queue residency note",
+      "text": "<html>\n      <head>\n        <meta charset=\"utf-8\" />\n        <title>Juniper Queue residency note</title>\n      </head>\n      <body>\n        <h1>Juniper Queue residency note</h1>\n<p>Juniper Queue snapshots stay in the Ghent relay until customer names are redacted.</p>\n<p>The boundary keeps Juniper Queue data local and auditable during review handoffs.</p>\n      </body>\n    </html>\n",
+      "at": "2026-06-09"
+    },
+    {
+      "key": "juniper_queue_event",
+      "session": "large-eval-2",
+      "ingest_kind": "event",
+      "text": "Juniper Queue review on 2026-06-10: Marcus Ivers approved the revised plan after the backlog pressure trace.",
+      "at": "2026-06-10"
+    },
+    {
+      "key": "kestrel_index_note_v1",
+      "session": "large-eval-3",
+      "ingest_kind": "note",
+      "text": "Idea: Kestrel Index target is 2026-06-28 if the first approval gate clears this week.",
+      "at": "2026-06-10"
+    },
+    {
+      "key": "kestrel_index_note_v2",
+      "session": "large-eval-3",
+      "ingest_kind": "note",
+      "text": "Idea: revise Kestrel Index target to 2026-07-05 because index repairs still miss yesterday's berth aliases.",
+      "at": "2026-06-11"
+    },
+    {
+      "key": "kestrel_index_source",
+      "session": "large-eval-3",
+      "ingest_kind": "file",
+      "text": "Kestrel Index rollout brief\n\nThe revised Kestrel Index plan moved the target from 2026-06-28 to 2026-07-05 because index repairs still miss yesterday's berth aliases.\nAfter warming alias tables before rebuild, index hydration fell to 420ms.\n\nThis brief is derived from the revised Kestrel Index plan so the approval trail stays inspectable.\n",
+      "at": "2026-06-12",
+      "derived_from": "kestrel_index_note_v2"
+    },
+    {
+      "key": "kestrel_index_link",
+      "session": "large-eval-3",
+      "ingest_kind": "url",
+      "filename": "kestrel_index_residency_note.html",
+      "title": "Kestrel Index residency note",
+      "text": "<html>\n      <head>\n        <meta charset=\"utf-8\" />\n        <title>Kestrel Index residency note</title>\n      </head>\n      <body>\n        <h1>Kestrel Index residency note</h1>\n<p>Kestrel Index snapshots stay in the Malmo index until customer names are redacted.</p>\n<p>The boundary keeps Kestrel Index data local and auditable during review handoffs.</p>\n      </body>\n    </html>\n",
+      "at": "2026-06-13"
+    },
+    {
+      "key": "kestrel_index_event",
+      "session": "large-eval-3",
+      "ingest_kind": "event",
+      "text": "Kestrel Index review on 2026-06-14: Nadia Frost approved the revised plan after the index repair replay.",
+      "at": "2026-06-14"
+    },
+    {
+      "key": "lattice_replay_note_v1",
+      "session": "large-eval-3",
+      "ingest_kind": "note",
+      "text": "Idea: Lattice Replay target is 2026-07-02 if the first approval gate clears this week.",
+      "at": "2026-06-14"
+    },
+    {
+      "key": "lattice_replay_note_v2",
+      "session": "large-eval-3",
+      "ingest_kind": "note",
+      "text": "Idea: revise Lattice Replay target to 2026-07-09 because packet rewind still restores archived manifest hints.",
+      "at": "2026-06-15"
+    },
+    {
+      "key": "lattice_replay_source",
+      "session": "large-eval-3",
+      "ingest_kind": "file",
+      "text": "Lattice Replay rollout brief\n\nThe revised Lattice Replay plan moved the target from 2026-07-02 to 2026-07-09 because packet rewind still restores archived manifest hints.\nAfter replaying packets from the last safe marker, packet rebuild fell to 431ms.\n\nThis brief is derived from the revised Lattice Replay plan so the approval trail stays inspectable.\n",
+      "at": "2026-06-16",
+      "derived_from": "lattice_replay_note_v2"
+    },
+    {
+      "key": "lattice_replay_link",
+      "session": "large-eval-3",
+      "ingest_kind": "url",
+      "filename": "lattice_replay_residency_note.html",
+      "title": "Lattice Replay residency note",
+      "text": "<html>\n      <head>\n        <meta charset=\"utf-8\" />\n        <title>Lattice Replay residency note</title>\n      </head>\n      <body>\n        <h1>Lattice Replay residency note</h1>\n<p>Lattice Replay snapshots stay in the Riga buffer until customer names are redacted.</p>\n<p>The boundary keeps Lattice Replay data local and auditable during review handoffs.</p>\n      </body>\n    </html>\n",
+      "at": "2026-06-17"
+    },
+    {
+      "key": "lattice_replay_event",
+      "session": "large-eval-3",
+      "ingest_kind": "event",
+      "text": "Lattice Replay review on 2026-06-18: Diego Tran approved the revised plan after the packet rewind demonstration.",
+      "at": "2026-06-18"
+    },
+    {
+      "key": "meridian_cache_note_v1",
+      "session": "large-eval-3",
+      "ingest_kind": "note",
+      "text": "Idea: Meridian Cache target is 2026-07-06 if the first approval gate clears this week.",
+      "at": "2026-06-18"
+    },
+    {
+      "key": "meridian_cache_note_v2",
+      "session": "large-eval-3",
+      "ingest_kind": "note",
+      "text": "Idea: revise Meridian Cache target to 2026-07-13 because cache digests still reuse expired customs labels.",
+      "at": "2026-06-19"
+    },
+    {
+      "key": "meridian_cache_source",
+      "session": "large-eval-3",
+      "ingest_kind": "file",
+      "text": "Meridian Cache rollout brief\n\nThe revised Meridian Cache plan moved the target from 2026-07-06 to 2026-07-13 because cache digests still reuse expired customs labels.\nAfter invalidating digests by manifest revision, cache recovery fell to 442ms.\n\nThis brief is derived from the revised Meridian Cache plan so the approval trail stays inspectable.\n",
+      "at": "2026-06-20",
+      "derived_from": "meridian_cache_note_v2"
+    },
+    {
+      "key": "meridian_cache_link",
+      "session": "large-eval-3",
+      "ingest_kind": "url",
+      "filename": "meridian_cache_residency_note.html",
+      "title": "Meridian Cache residency note",
+      "text": "<html>\n      <head>\n        <meta charset=\"utf-8\" />\n        <title>Meridian Cache residency note</title>\n      </head>\n      <body>\n        <h1>Meridian Cache residency note</h1>\n<p>Meridian Cache snapshots stay in the Tallinn cache until customer names are redacted.</p>\n<p>The boundary keeps Meridian Cache data local and auditable during review handoffs.</p>\n      </body>\n    </html>\n",
+      "at": "2026-06-21"
+    },
+    {
+      "key": "meridian_cache_event",
+      "session": "large-eval-3",
+      "ingest_kind": "event",
+      "text": "Meridian Cache review on 2026-06-22: Elena Sato approved the revised plan after the cache invalidation rehearsal.",
+      "at": "2026-06-22"
+    },
+    {
+      "key": "nimbus_review_note_v1",
+      "session": "large-eval-3",
+      "ingest_kind": "note",
+      "text": "Idea: Nimbus Review target is 2026-07-10 if the first approval gate clears this week.",
+      "at": "2026-06-22"
+    },
+    {
+      "key": "nimbus_review_note_v2",
+      "session": "large-eval-3",
+      "ingest_kind": "note",
+      "text": "Idea: revise Nimbus Review target to 2026-07-17 because review summaries still hide the last approval clause.",
+      "at": "2026-06-23"
+    },
+    {
+      "key": "nimbus_review_source",
+      "session": "large-eval-3",
+      "ingest_kind": "file",
+      "text": "Nimbus Review rollout brief\n\nThe revised Nimbus Review plan moved the target from 2026-07-10 to 2026-07-17 because review summaries still hide the last approval clause.\nAfter pinning the approval clause first, review assembly fell to 453ms.\n\nThis brief is derived from the revised Nimbus Review plan so the approval trail stays inspectable.\n",
+      "at": "2026-06-24",
+      "derived_from": "nimbus_review_note_v2"
+    },
+    {
+      "key": "nimbus_review_link",
+      "session": "large-eval-3",
+      "ingest_kind": "url",
+      "filename": "nimbus_review_residency_note.html",
+      "title": "Nimbus Review residency note",
+      "text": "<html>\n      <head>\n        <meta charset=\"utf-8\" />\n        <title>Nimbus Review residency note</title>\n      </head>\n      <body>\n        <h1>Nimbus Review residency note</h1>\n<p>Nimbus Review snapshots stay in the Turku review zone until customer names are redacted.</p>\n<p>The boundary keeps Nimbus Review data local and auditable during review handoffs.</p>\n      </body>\n    </html>\n",
+      "at": "2026-06-25"
+    },
+    {
+      "key": "nimbus_review_event",
+      "session": "large-eval-3",
+      "ingest_kind": "event",
+      "text": "Nimbus Review review on 2026-06-26: Gavin Lowe approved the revised plan after the review rubric playback.",
+      "at": "2026-06-26"
+    },
+    {
+      "key": "orbit_timeline_note_v1",
+      "session": "large-eval-3",
+      "ingest_kind": "note",
+      "text": "Idea: Orbit Timeline target is 2026-07-14 if the first approval gate clears this week.",
+      "at": "2026-06-26"
+    },
+    {
+      "key": "orbit_timeline_note_v2",
+      "session": "large-eval-3",
+      "ingest_kind": "note",
+      "text": "Idea: revise Orbit Timeline target to 2026-07-21 because timeline joins still drop weekend handoff markers.",
+      "at": "2026-06-27"
+    },
+    {
+      "key": "orbit_timeline_source",
+      "session": "large-eval-3",
+      "ingest_kind": "file",
+      "text": "Orbit Timeline rollout brief\n\nThe revised Orbit Timeline plan moved the target from 2026-07-14 to 2026-07-21 because timeline joins still drop weekend handoff markers.\nAfter joining weekend markers before ranking, timeline stitch fell to 464ms.\n\nThis brief is derived from the revised Orbit Timeline plan so the approval trail stays inspectable.\n",
+      "at": "2026-06-28",
+      "derived_from": "orbit_timeline_note_v2"
+    },
+    {
+      "key": "orbit_timeline_link",
+      "session": "large-eval-3",
+      "ingest_kind": "url",
+      "filename": "orbit_timeline_residency_note.html",
+      "title": "Orbit Timeline residency note",
+      "text": "<html>\n      <head>\n        <meta charset=\"utf-8\" />\n        <title>Orbit Timeline residency note</title>\n      </head>\n      <body>\n        <h1>Orbit Timeline residency note</h1>\n<p>Orbit Timeline snapshots stay in the Lulea timeline rack until customer names are redacted.</p>\n<p>The boundary keeps Orbit Timeline data local and auditable during review handoffs.</p>\n      </body>\n    </html>\n",
+      "at": "2026-06-29"
+    },
+    {
+      "key": "orbit_timeline_event",
+      "session": "large-eval-3",
+      "ingest_kind": "event",
+      "text": "Orbit Timeline review on 2026-06-30: Hana Price approved the revised plan after the timeline audit sweep.",
+      "at": "2026-06-30"
+    },
+    {
+      "key": "prism_sync_note_v1",
+      "session": "large-eval-4",
+      "ingest_kind": "note",
+      "text": "Idea: Prism Sync target is 2026-07-18 if the first approval gate clears this week.",
+      "at": "2026-06-30"
+    },
+    {
+      "key": "prism_sync_note_v2",
+      "session": "large-eval-4",
+      "ingest_kind": "note",
+      "text": "Idea: revise Prism Sync target to 2026-07-25 because sync ledgers still round fuel adjustments incorrectly.",
+      "at": "2026-07-01"
+    },
+    {
+      "key": "prism_sync_source",
+      "session": "large-eval-4",
+      "ingest_kind": "file",
+      "text": "Prism Sync rollout brief\n\nThe revised Prism Sync plan moved the target from 2026-07-18 to 2026-07-25 because sync ledgers still round fuel adjustments incorrectly.\nAfter compacting sync ledgers before tunnel entry, offline handshake fell to 475ms.\n\nThis brief is derived from the revised Prism Sync plan so the approval trail stays inspectable.\n",
+      "at": "2026-07-02",
+      "derived_from": "prism_sync_note_v2"
+    },
+    {
+      "key": "prism_sync_link",
+      "session": "large-eval-4",
+      "ingest_kind": "url",
+      "filename": "prism_sync_residency_note.html",
+      "title": "Prism Sync residency note",
+      "text": "<html>\n      <head>\n        <meta charset=\"utf-8\" />\n        <title>Prism Sync residency note</title>\n      </head>\n      <body>\n        <h1>Prism Sync residency note</h1>\n<p>Prism Sync snapshots stay in the Svolvaer sync bay until customer names are redacted.</p>\n<p>The boundary keeps Prism Sync data local and auditable during review handoffs.</p>\n      </body>\n    </html>\n",
+      "at": "2026-07-03"
+    },
+    {
+      "key": "prism_sync_event",
+      "session": "large-eval-4",
+      "ingest_kind": "event",
+      "text": "Prism Sync review on 2026-07-04: Isaac Bloom approved the revised plan after the tunnel sync drill.",
+      "at": "2026-07-04"
+    },
+    {
+      "key": "quay_audit_note_v1",
+      "session": "large-eval-4",
+      "ingest_kind": "note",
+      "text": "Idea: Quay Audit target is 2026-07-22 if the first approval gate clears this week.",
+      "at": "2026-07-04"
+    },
+    {
+      "key": "quay_audit_note_v2",
+      "session": "large-eval-4",
+      "ingest_kind": "note",
+      "text": "Idea: revise Quay Audit target to 2026-07-29 because audit bundles still expose pre-redaction names.",
+      "at": "2026-07-05"
+    },
+    {
+      "key": "quay_audit_source",
+      "session": "large-eval-4",
+      "ingest_kind": "file",
+      "text": "Quay Audit rollout brief\n\nThe revised Quay Audit plan moved the target from 2026-07-22 to 2026-07-29 because audit bundles still expose pre-redaction names.\nAfter packing audit bundles after redaction, audit packaging fell to 486ms.\n\nThis brief is derived from the revised Quay Audit plan so the approval trail stays inspectable.\n",
+      "at": "2026-07-06",
+      "derived_from": "quay_audit_note_v2"
+    },
+    {
+      "key": "quay_audit_link",
+      "session": "large-eval-4",
+      "ingest_kind": "url",
+      "filename": "quay_audit_residency_note.html",
+      "title": "Quay Audit residency note",
+      "text": "<html>\n      <head>\n        <meta charset=\"utf-8\" />\n        <title>Quay Audit residency note</title>\n      </head>\n      <body>\n        <h1>Quay Audit residency note</h1>\n<p>Quay Audit snapshots stay in the Esbjerg audit vault until customer names are redacted.</p>\n<p>The boundary keeps Quay Audit data local and auditable during review handoffs.</p>\n      </body>\n    </html>\n",
+      "at": "2026-07-07"
+    },
+    {
+      "key": "quay_audit_event",
+      "session": "large-eval-4",
+      "ingest_kind": "event",
+      "text": "Quay Audit review on 2026-07-08: Keira Doyle approved the revised plan after the audit export replay.",
+      "at": "2026-07-08"
+    },
+    {
+      "key": "river_threshold_note_v1",
+      "session": "large-eval-4",
+      "ingest_kind": "note",
+      "text": "Idea: River Threshold target is 2026-07-26 if the first approval gate clears this week.",
+      "at": "2026-07-08"
+    },
+    {
+      "key": "river_threshold_note_v2",
+      "session": "large-eval-4",
+      "ingest_kind": "note",
+      "text": "Idea: revise River Threshold target to 2026-08-02 because threshold reports still clip the first warning band.",
+      "at": "2026-07-09"
+    },
+    {
+      "key": "river_threshold_source",
+      "session": "large-eval-4",
+      "ingest_kind": "file",
+      "text": "River Threshold rollout brief\n\nThe revised River Threshold plan moved the target from 2026-07-26 to 2026-08-02 because threshold reports still clip the first warning band.\nAfter sampling the first warning band separately, threshold refresh fell to 497ms.\n\nThis brief is derived from the revised River Threshold plan so the approval trail stays inspectable.\n",
+      "at": "2026-07-10",
+      "derived_from": "river_threshold_note_v2"
+    },
+    {
+      "key": "river_threshold_link",
+      "session": "large-eval-4",
+      "ingest_kind": "url",
+      "filename": "river_threshold_residency_note.html",
+      "title": "River Threshold residency note",
+      "text": "<html>\n      <head>\n        <meta charset=\"utf-8\" />\n        <title>River Threshold residency note</title>\n      </head>\n      <body>\n        <h1>River Threshold residency note</h1>\n<p>River Threshold snapshots stay in the Umea threshold shelf until customer names are redacted.</p>\n<p>The boundary keeps River Threshold data local and auditable during review handoffs.</p>\n      </body>\n    </html>\n",
+      "at": "2026-07-11"
+    },
+    {
+      "key": "river_threshold_event",
+      "session": "large-eval-4",
+      "ingest_kind": "event",
+      "text": "River Threshold review on 2026-07-12: Leo Mercer approved the revised plan after the threshold calibration run.",
+      "at": "2026-07-12"
+    },
+    {
+      "key": "signal_provenance_note_v1",
+      "session": "large-eval-4",
+      "ingest_kind": "note",
+      "text": "Idea: Signal Provenance target is 2026-07-30 if the first approval gate clears this week.",
+      "at": "2026-07-12"
+    },
+    {
+      "key": "signal_provenance_note_v2",
+      "session": "large-eval-4",
+      "ingest_kind": "note",
+      "text": "Idea: revise Signal Provenance target to 2026-08-06 because provenance notes still lose the original source chain.",
+      "at": "2026-07-13"
+    },
+    {
+      "key": "signal_provenance_source",
+      "session": "large-eval-4",
+      "ingest_kind": "file",
+      "text": "Signal Provenance rollout brief\n\nThe revised Signal Provenance plan moved the target from 2026-07-30 to 2026-08-06 because provenance notes still lose the original source chain.\nAfter walking the source chain from the root note, provenance scan fell to 508ms.\n\nThis brief is derived from the revised Signal Provenance plan so the approval trail stays inspectable.\n",
+      "at": "2026-07-14",
+      "derived_from": "signal_provenance_note_v2"
+    },
+    {
+      "key": "signal_provenance_link",
+      "session": "large-eval-4",
+      "ingest_kind": "url",
+      "filename": "signal_provenance_residency_note.html",
+      "title": "Signal Provenance residency note",
+      "text": "<html>\n      <head>\n        <meta charset=\"utf-8\" />\n        <title>Signal Provenance residency note</title>\n      </head>\n      <body>\n        <h1>Signal Provenance residency note</h1>\n<p>Signal Provenance snapshots stay in the Gdansk provenance room until customer names are redacted.</p>\n<p>The boundary keeps Signal Provenance data local and auditable during review handoffs.</p>\n      </body>\n    </html>\n",
+      "at": "2026-07-15"
+    },
+    {
+      "key": "signal_provenance_event",
+      "session": "large-eval-4",
+      "ingest_kind": "event",
+      "text": "Signal Provenance review on 2026-07-16: Mina Ortiz approved the revised plan after the provenance chain walkthrough.",
+      "at": "2026-07-16"
+    },
+    {
+      "key": "tidal_atlas_note_v1",
+      "session": "large-eval-4",
+      "ingest_kind": "note",
+      "text": "Idea: Tidal Atlas target is 2026-08-03 if the first approval gate clears this week.",
+      "at": "2026-07-16"
+    },
+    {
+      "key": "tidal_atlas_note_v2",
+      "session": "large-eval-4",
+      "ingest_kind": "note",
+      "text": "Idea: revise Tidal Atlas target to 2026-08-10 because atlas exports still shift harbor names across panels.",
+      "at": "2026-07-17"
+    },
+    {
+      "key": "tidal_atlas_source",
+      "session": "large-eval-4",
+      "ingest_kind": "file",
+      "text": "Tidal Atlas rollout brief\n\nThe revised Tidal Atlas plan moved the target from 2026-08-03 to 2026-08-10 because atlas exports still shift harbor names across panels.\nAfter pinning harbor names before panel export, atlas compile fell to 519ms.\n\nThis brief is derived from the revised Tidal Atlas plan so the approval trail stays inspectable.\n",
+      "at": "2026-07-18",
+      "derived_from": "tidal_atlas_note_v2"
+    },
+    {
+      "key": "tidal_atlas_link",
+      "session": "large-eval-4",
+      "ingest_kind": "url",
+      "filename": "tidal_atlas_residency_note.html",
+      "title": "Tidal Atlas residency note",
+      "text": "<html>\n      <head>\n        <meta charset=\"utf-8\" />\n        <title>Tidal Atlas residency note</title>\n      </head>\n      <body>\n        <h1>Tidal Atlas residency note</h1>\n<p>Tidal Atlas snapshots stay in the Bodo atlas stack until customer names are redacted.</p>\n<p>The boundary keeps Tidal Atlas data local and auditable during review handoffs.</p>\n      </body>\n    </html>\n",
+      "at": "2026-07-19"
+    },
+    {
+      "key": "tidal_atlas_event",
+      "session": "large-eval-4",
+      "ingest_kind": "event",
+      "text": "Tidal Atlas review on 2026-07-20: Noah Quinn approved the revised plan after the atlas proofing session.",
+      "at": "2026-07-20"
+    }
+  ],
+  "queries": [
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Who approved the revised Aurora Ledger plan?",
+      "expected_substrings": [
+        "mira chen"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What cold reconciliation result did Aurora Ledger reach?",
+      "expected_substrings": [
+        "310ms"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Where must Aurora Ledger snapshots stay before redaction?",
+      "expected_substrings": [
+        "reykjavik ring"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What target did Aurora Ledger move to?",
+      "expected_substrings": [
+        "2026-05-26"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What changed cold reconciliation for Aurora Ledger after prewarming ledger shards?",
+      "expected_substrings": [
+        "310ms",
+        "prewarming ledger shards"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What boundary keeps Aurora Ledger data local?",
+      "expected_substrings": [
+        "reykjavik ring"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What source was derived from the revised Aurora Ledger plan?",
+      "expected_substrings": [
+        "aurora ledger rollout brief"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What older Aurora Ledger target was explicitly replaced by a newer note?",
+      "expected_substrings": [
+        "2026-05-19"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "timeline",
+      "query": "Between 2026-05-02 and 2026-05-05, who approved Aurora Ledger after the target change?",
+      "expected_substrings": [
+        "mira chen",
+        "2026-05-26"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Who approved the revised Beacon Routing plan?",
+      "expected_substrings": [
+        "owen vale"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What handoff lookup result did Beacon Routing reach?",
+      "expected_substrings": [
+        "321ms"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Where must Beacon Routing snapshots stay before redaction?",
+      "expected_substrings": [
+        "bergen vault"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What target did Beacon Routing move to?",
+      "expected_substrings": [
+        "2026-05-30"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What changed handoff lookup for Beacon Routing after packing quay maps before handoff?",
+      "expected_substrings": [
+        "321ms",
+        "packing quay maps before handoff"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What boundary keeps Beacon Routing data local?",
+      "expected_substrings": [
+        "bergen vault"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What source was derived from the revised Beacon Routing plan?",
+      "expected_substrings": [
+        "beacon routing rollout brief"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What older Beacon Routing target was explicitly replaced by a newer note?",
+      "expected_substrings": [
+        "2026-05-23"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "timeline",
+      "query": "Between 2026-05-06 and 2026-05-09, who approved Beacon Routing after the target change?",
+      "expected_substrings": [
+        "owen vale",
+        "2026-05-30"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Who approved the revised Cascade Forms plan?",
+      "expected_substrings": [
+        "priya nordin"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What manifest assembly result did Cascade Forms reach?",
+      "expected_substrings": [
+        "332ms"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Where must Cascade Forms snapshots stay before redaction?",
+      "expected_substrings": [
+        "nuuk shelf"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What target did Cascade Forms move to?",
+      "expected_substrings": [
+        "2026-06-03"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What changed manifest assembly for Cascade Forms after grouping customs pages by vessel lane?",
+      "expected_substrings": [
+        "332ms",
+        "grouping customs pages by vessel lane"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What boundary keeps Cascade Forms data local?",
+      "expected_substrings": [
+        "nuuk shelf"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What source was derived from the revised Cascade Forms plan?",
+      "expected_substrings": [
+        "cascade forms rollout brief"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What older Cascade Forms target was explicitly replaced by a newer note?",
+      "expected_substrings": [
+        "2026-05-27"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "timeline",
+      "query": "Between 2026-05-10 and 2026-05-13, who approved Cascade Forms after the target change?",
+      "expected_substrings": [
+        "priya nordin",
+        "2026-06-03"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Who approved the revised Drift Signals plan?",
+      "expected_substrings": [
+        "lena brooks"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What signal replay result did Drift Signals reach?",
+      "expected_substrings": [
+        "343ms"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Where must Drift Signals snapshots stay before redaction?",
+      "expected_substrings": [
+        "helsinki corridor"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What target did Drift Signals move to?",
+      "expected_substrings": [
+        "2026-06-07"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What changed signal replay for Drift Signals after splitting storm relays by watch window?",
+      "expected_substrings": [
+        "343ms",
+        "splitting storm relays by watch window"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What boundary keeps Drift Signals data local?",
+      "expected_substrings": [
+        "helsinki corridor"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What source was derived from the revised Drift Signals plan?",
+      "expected_substrings": [
+        "drift signals rollout brief"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What older Drift Signals target was explicitly replaced by a newer note?",
+      "expected_substrings": [
+        "2026-05-31"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "timeline",
+      "query": "Between 2026-05-14 and 2026-05-17, who approved Drift Signals after the target change?",
+      "expected_substrings": [
+        "lena brooks",
+        "2026-06-07"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Who approved the revised Ember Archive plan?",
+      "expected_substrings": [
+        "tariq hale"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What archive wake-up result did Ember Archive reach?",
+      "expected_substrings": [
+        "354ms"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Where must Ember Archive snapshots stay before redaction?",
+      "expected_substrings": [
+        "kirkenes ledger"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What target did Ember Archive move to?",
+      "expected_substrings": [
+        "2026-06-11"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What changed archive wake-up for Ember Archive after pinning archive manifests before thaw?",
+      "expected_substrings": [
+        "354ms",
+        "pinning archive manifests before thaw"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What boundary keeps Ember Archive data local?",
+      "expected_substrings": [
+        "kirkenes ledger"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What source was derived from the revised Ember Archive plan?",
+      "expected_substrings": [
+        "ember archive rollout brief"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What older Ember Archive target was explicitly replaced by a newer note?",
+      "expected_substrings": [
+        "2026-06-04"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "timeline",
+      "query": "Between 2026-05-18 and 2026-05-21, who approved Ember Archive after the target change?",
+      "expected_substrings": [
+        "tariq hale",
+        "2026-06-11"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Who approved the revised Fjord Notes plan?",
+      "expected_substrings": [
+        "sofia mendez"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What annotation merge result did Fjord Notes reach?",
+      "expected_substrings": [
+        "365ms"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Where must Fjord Notes snapshots stay before redaction?",
+      "expected_substrings": [
+        "tromso archive"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What target did Fjord Notes move to?",
+      "expected_substrings": [
+        "2026-06-15"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What changed annotation merge for Fjord Notes after staging tide annotations by berth?",
+      "expected_substrings": [
+        "365ms",
+        "staging tide annotations by berth"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What boundary keeps Fjord Notes data local?",
+      "expected_substrings": [
+        "tromso archive"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What source was derived from the revised Fjord Notes plan?",
+      "expected_substrings": [
+        "fjord notes rollout brief"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What older Fjord Notes target was explicitly replaced by a newer note?",
+      "expected_substrings": [
+        "2026-06-08"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "timeline",
+      "query": "Between 2026-05-22 and 2026-05-25, who approved Fjord Notes after the target change?",
+      "expected_substrings": [
+        "sofia mendez",
+        "2026-06-15"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Who approved the revised Glacier Alerts plan?",
+      "expected_substrings": [
+        "jonas park"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What alert routing result did Glacier Alerts reach?",
+      "expected_substrings": [
+        "376ms"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Where must Glacier Alerts snapshots stay before redaction?",
+      "expected_substrings": [
+        "odense lane"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What target did Glacier Alerts move to?",
+      "expected_substrings": [
+        "2026-06-19"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What changed alert routing for Glacier Alerts after prefetching alert palettes before dusk?",
+      "expected_substrings": [
+        "376ms",
+        "prefetching alert palettes before dusk"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What boundary keeps Glacier Alerts data local?",
+      "expected_substrings": [
+        "odense lane"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What source was derived from the revised Glacier Alerts plan?",
+      "expected_substrings": [
+        "glacier alerts rollout brief"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What older Glacier Alerts target was explicitly replaced by a newer note?",
+      "expected_substrings": [
+        "2026-06-12"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "timeline",
+      "query": "Between 2026-05-26 and 2026-05-29, who approved Glacier Alerts after the target change?",
+      "expected_substrings": [
+        "jonas park",
+        "2026-06-19"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Who approved the revised Harbor Sketch plan?",
+      "expected_substrings": [
+        "avery cole"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What overlay render result did Harbor Sketch reach?",
+      "expected_substrings": [
+        "387ms"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Where must Harbor Sketch snapshots stay before redaction?",
+      "expected_substrings": [
+        "aarhus frame"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What target did Harbor Sketch move to?",
+      "expected_substrings": [
+        "2026-06-23"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What changed overlay render for Harbor Sketch after caching crane overlays before review?",
+      "expected_substrings": [
+        "387ms",
+        "caching crane overlays before review"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What boundary keeps Harbor Sketch data local?",
+      "expected_substrings": [
+        "aarhus frame"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What source was derived from the revised Harbor Sketch plan?",
+      "expected_substrings": [
+        "harbor sketch rollout brief"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What older Harbor Sketch target was explicitly replaced by a newer note?",
+      "expected_substrings": [
+        "2026-06-16"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "timeline",
+      "query": "Between 2026-05-30 and 2026-06-02, who approved Harbor Sketch after the target change?",
+      "expected_substrings": [
+        "avery cole",
+        "2026-06-23"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Who approved the revised Ion Dispatch plan?",
+      "expected_substrings": [
+        "rina shah"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What dispatch settle result did Ion Dispatch reach?",
+      "expected_substrings": [
+        "398ms"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Where must Ion Dispatch snapshots stay before redaction?",
+      "expected_substrings": [
+        "dublin parcel"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What target did Ion Dispatch move to?",
+      "expected_substrings": [
+        "2026-06-27"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What changed dispatch settle for Ion Dispatch after batching route receipts by dock?",
+      "expected_substrings": [
+        "398ms",
+        "batching route receipts by dock"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What boundary keeps Ion Dispatch data local?",
+      "expected_substrings": [
+        "dublin parcel"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What source was derived from the revised Ion Dispatch plan?",
+      "expected_substrings": [
+        "ion dispatch rollout brief"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What older Ion Dispatch target was explicitly replaced by a newer note?",
+      "expected_substrings": [
+        "2026-06-20"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "timeline",
+      "query": "Between 2026-06-03 and 2026-06-06, who approved Ion Dispatch after the target change?",
+      "expected_substrings": [
+        "rina shah",
+        "2026-06-27"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Who approved the revised Juniper Queue plan?",
+      "expected_substrings": [
+        "marcus ivers"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What queue replay result did Juniper Queue reach?",
+      "expected_substrings": [
+        "409ms"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Where must Juniper Queue snapshots stay before redaction?",
+      "expected_substrings": [
+        "ghent relay"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What target did Juniper Queue move to?",
+      "expected_substrings": [
+        "2026-07-01"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What changed queue replay for Juniper Queue after sorting ferry batches by departure band?",
+      "expected_substrings": [
+        "409ms",
+        "sorting ferry batches by departure band"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What boundary keeps Juniper Queue data local?",
+      "expected_substrings": [
+        "ghent relay"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What source was derived from the revised Juniper Queue plan?",
+      "expected_substrings": [
+        "juniper queue rollout brief"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What older Juniper Queue target was explicitly replaced by a newer note?",
+      "expected_substrings": [
+        "2026-06-24"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "timeline",
+      "query": "Between 2026-06-07 and 2026-06-10, who approved Juniper Queue after the target change?",
+      "expected_substrings": [
+        "marcus ivers",
+        "2026-07-01"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Who approved the revised Kestrel Index plan?",
+      "expected_substrings": [
+        "nadia frost"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What index hydration result did Kestrel Index reach?",
+      "expected_substrings": [
+        "420ms"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Where must Kestrel Index snapshots stay before redaction?",
+      "expected_substrings": [
+        "malmo index"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What target did Kestrel Index move to?",
+      "expected_substrings": [
+        "2026-07-05"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What changed index hydration for Kestrel Index after warming alias tables before rebuild?",
+      "expected_substrings": [
+        "420ms",
+        "warming alias tables before rebuild"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What boundary keeps Kestrel Index data local?",
+      "expected_substrings": [
+        "malmo index"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What source was derived from the revised Kestrel Index plan?",
+      "expected_substrings": [
+        "kestrel index rollout brief"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What older Kestrel Index target was explicitly replaced by a newer note?",
+      "expected_substrings": [
+        "2026-06-28"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "timeline",
+      "query": "Between 2026-06-11 and 2026-06-14, who approved Kestrel Index after the target change?",
+      "expected_substrings": [
+        "nadia frost",
+        "2026-07-05"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Who approved the revised Lattice Replay plan?",
+      "expected_substrings": [
+        "diego tran"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What packet rebuild result did Lattice Replay reach?",
+      "expected_substrings": [
+        "431ms"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Where must Lattice Replay snapshots stay before redaction?",
+      "expected_substrings": [
+        "riga buffer"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What target did Lattice Replay move to?",
+      "expected_substrings": [
+        "2026-07-09"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What changed packet rebuild for Lattice Replay after replaying packets from the last safe marker?",
+      "expected_substrings": [
+        "431ms",
+        "replaying packets from the last safe marker"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What boundary keeps Lattice Replay data local?",
+      "expected_substrings": [
+        "riga buffer"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What source was derived from the revised Lattice Replay plan?",
+      "expected_substrings": [
+        "lattice replay rollout brief"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What older Lattice Replay target was explicitly replaced by a newer note?",
+      "expected_substrings": [
+        "2026-07-02"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "timeline",
+      "query": "Between 2026-06-15 and 2026-06-18, who approved Lattice Replay after the target change?",
+      "expected_substrings": [
+        "diego tran",
+        "2026-07-09"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Who approved the revised Meridian Cache plan?",
+      "expected_substrings": [
+        "elena sato"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What cache recovery result did Meridian Cache reach?",
+      "expected_substrings": [
+        "442ms"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Where must Meridian Cache snapshots stay before redaction?",
+      "expected_substrings": [
+        "tallinn cache"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What target did Meridian Cache move to?",
+      "expected_substrings": [
+        "2026-07-13"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What changed cache recovery for Meridian Cache after invalidating digests by manifest revision?",
+      "expected_substrings": [
+        "442ms",
+        "invalidating digests by manifest revision"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What boundary keeps Meridian Cache data local?",
+      "expected_substrings": [
+        "tallinn cache"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What source was derived from the revised Meridian Cache plan?",
+      "expected_substrings": [
+        "meridian cache rollout brief"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What older Meridian Cache target was explicitly replaced by a newer note?",
+      "expected_substrings": [
+        "2026-07-06"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "timeline",
+      "query": "Between 2026-06-19 and 2026-06-22, who approved Meridian Cache after the target change?",
+      "expected_substrings": [
+        "elena sato",
+        "2026-07-13"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Who approved the revised Nimbus Review plan?",
+      "expected_substrings": [
+        "gavin lowe"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What review assembly result did Nimbus Review reach?",
+      "expected_substrings": [
+        "453ms"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Where must Nimbus Review snapshots stay before redaction?",
+      "expected_substrings": [
+        "turku review zone"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What target did Nimbus Review move to?",
+      "expected_substrings": [
+        "2026-07-17"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What changed review assembly for Nimbus Review after pinning the approval clause first?",
+      "expected_substrings": [
+        "453ms",
+        "pinning the approval clause first"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What boundary keeps Nimbus Review data local?",
+      "expected_substrings": [
+        "turku review zone"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What source was derived from the revised Nimbus Review plan?",
+      "expected_substrings": [
+        "nimbus review rollout brief"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What older Nimbus Review target was explicitly replaced by a newer note?",
+      "expected_substrings": [
+        "2026-07-10"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "timeline",
+      "query": "Between 2026-06-23 and 2026-06-26, who approved Nimbus Review after the target change?",
+      "expected_substrings": [
+        "gavin lowe",
+        "2026-07-17"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Who approved the revised Orbit Timeline plan?",
+      "expected_substrings": [
+        "hana price"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What timeline stitch result did Orbit Timeline reach?",
+      "expected_substrings": [
+        "464ms"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Where must Orbit Timeline snapshots stay before redaction?",
+      "expected_substrings": [
+        "lulea timeline rack"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What target did Orbit Timeline move to?",
+      "expected_substrings": [
+        "2026-07-21"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What changed timeline stitch for Orbit Timeline after joining weekend markers before ranking?",
+      "expected_substrings": [
+        "464ms",
+        "joining weekend markers before ranking"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What boundary keeps Orbit Timeline data local?",
+      "expected_substrings": [
+        "lulea timeline rack"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What source was derived from the revised Orbit Timeline plan?",
+      "expected_substrings": [
+        "orbit timeline rollout brief"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What older Orbit Timeline target was explicitly replaced by a newer note?",
+      "expected_substrings": [
+        "2026-07-14"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "timeline",
+      "query": "Between 2026-06-27 and 2026-06-30, who approved Orbit Timeline after the target change?",
+      "expected_substrings": [
+        "hana price",
+        "2026-07-21"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Who approved the revised Prism Sync plan?",
+      "expected_substrings": [
+        "isaac bloom"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What offline handshake result did Prism Sync reach?",
+      "expected_substrings": [
+        "475ms"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Where must Prism Sync snapshots stay before redaction?",
+      "expected_substrings": [
+        "svolvaer sync bay"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What target did Prism Sync move to?",
+      "expected_substrings": [
+        "2026-07-25"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What changed offline handshake for Prism Sync after compacting sync ledgers before tunnel entry?",
+      "expected_substrings": [
+        "475ms",
+        "compacting sync ledgers before tunnel entry"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What boundary keeps Prism Sync data local?",
+      "expected_substrings": [
+        "svolvaer sync bay"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What source was derived from the revised Prism Sync plan?",
+      "expected_substrings": [
+        "prism sync rollout brief"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What older Prism Sync target was explicitly replaced by a newer note?",
+      "expected_substrings": [
+        "2026-07-18"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "timeline",
+      "query": "Between 2026-07-01 and 2026-07-04, who approved Prism Sync after the target change?",
+      "expected_substrings": [
+        "isaac bloom",
+        "2026-07-25"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Who approved the revised Quay Audit plan?",
+      "expected_substrings": [
+        "keira doyle"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What audit packaging result did Quay Audit reach?",
+      "expected_substrings": [
+        "486ms"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Where must Quay Audit snapshots stay before redaction?",
+      "expected_substrings": [
+        "esbjerg audit vault"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What target did Quay Audit move to?",
+      "expected_substrings": [
+        "2026-07-29"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What changed audit packaging for Quay Audit after packing audit bundles after redaction?",
+      "expected_substrings": [
+        "486ms",
+        "packing audit bundles after redaction"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What boundary keeps Quay Audit data local?",
+      "expected_substrings": [
+        "esbjerg audit vault"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What source was derived from the revised Quay Audit plan?",
+      "expected_substrings": [
+        "quay audit rollout brief"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What older Quay Audit target was explicitly replaced by a newer note?",
+      "expected_substrings": [
+        "2026-07-22"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "timeline",
+      "query": "Between 2026-07-05 and 2026-07-08, who approved Quay Audit after the target change?",
+      "expected_substrings": [
+        "keira doyle",
+        "2026-07-29"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Who approved the revised River Threshold plan?",
+      "expected_substrings": [
+        "leo mercer"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What threshold refresh result did River Threshold reach?",
+      "expected_substrings": [
+        "497ms"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Where must River Threshold snapshots stay before redaction?",
+      "expected_substrings": [
+        "umea threshold shelf"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What target did River Threshold move to?",
+      "expected_substrings": [
+        "2026-08-02"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What changed threshold refresh for River Threshold after sampling the first warning band separately?",
+      "expected_substrings": [
+        "497ms",
+        "sampling the first warning band separately"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What boundary keeps River Threshold data local?",
+      "expected_substrings": [
+        "umea threshold shelf"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What source was derived from the revised River Threshold plan?",
+      "expected_substrings": [
+        "river threshold rollout brief"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What older River Threshold target was explicitly replaced by a newer note?",
+      "expected_substrings": [
+        "2026-07-26"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "timeline",
+      "query": "Between 2026-07-09 and 2026-07-12, who approved River Threshold after the target change?",
+      "expected_substrings": [
+        "leo mercer",
+        "2026-08-02"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Who approved the revised Signal Provenance plan?",
+      "expected_substrings": [
+        "mina ortiz"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What provenance scan result did Signal Provenance reach?",
+      "expected_substrings": [
+        "508ms"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Where must Signal Provenance snapshots stay before redaction?",
+      "expected_substrings": [
+        "gdansk provenance room"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What target did Signal Provenance move to?",
+      "expected_substrings": [
+        "2026-08-06"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What changed provenance scan for Signal Provenance after walking the source chain from the root note?",
+      "expected_substrings": [
+        "508ms",
+        "walking the source chain from the root note"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What boundary keeps Signal Provenance data local?",
+      "expected_substrings": [
+        "gdansk provenance room"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What source was derived from the revised Signal Provenance plan?",
+      "expected_substrings": [
+        "signal provenance rollout brief"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What older Signal Provenance target was explicitly replaced by a newer note?",
+      "expected_substrings": [
+        "2026-07-30"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "timeline",
+      "query": "Between 2026-07-13 and 2026-07-16, who approved Signal Provenance after the target change?",
+      "expected_substrings": [
+        "mina ortiz",
+        "2026-08-06"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Who approved the revised Tidal Atlas plan?",
+      "expected_substrings": [
+        "noah quinn"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What atlas compile result did Tidal Atlas reach?",
+      "expected_substrings": [
+        "519ms"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "Where must Tidal Atlas snapshots stay before redaction?",
+      "expected_substrings": [
+        "bodo atlas stack"
+      ]
+    },
+    {
+      "kind": "direct",
+      "query_type": "lookup",
+      "query": "What target did Tidal Atlas move to?",
+      "expected_substrings": [
+        "2026-08-10"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What changed atlas compile for Tidal Atlas after pinning harbor names before panel export?",
+      "expected_substrings": [
+        "519ms",
+        "pinning harbor names before panel export"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "paraphrase",
+      "query": "What boundary keeps Tidal Atlas data local?",
+      "expected_substrings": [
+        "bodo atlas stack"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What source was derived from the revised Tidal Atlas plan?",
+      "expected_substrings": [
+        "tidal atlas rollout brief"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "relationship",
+      "query": "What older Tidal Atlas target was explicitly replaced by a newer note?",
+      "expected_substrings": [
+        "2026-08-03"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "timeline",
+      "query": "Between 2026-07-17 and 2026-07-20, who approved Tidal Atlas after the target change?",
+      "expected_substrings": [
+        "noah quinn",
+        "2026-08-10"
+      ]
+    },
+    {
+      "kind": "indirect",
+      "query_type": "negative",
+      "query": "What do we know about Velvet Comet vacuum orchids?",
+      "expected_substrings": [],
+      "expect_empty": true
+    },
+    {
+      "kind": "indirect",
+      "query_type": "negative",
+      "query": "What do we know about Copper Orchard lunar wafers?",
+      "expected_substrings": [],
+      "expect_empty": true
+    },
+    {
+      "kind": "indirect",
+      "query_type": "negative",
+      "query": "What do we know about Marble Zephyr submarine peaches?",
+      "expected_substrings": [],
+      "expect_empty": true
+    },
+    {
+      "kind": "indirect",
+      "query_type": "negative",
+      "query": "What do we know about Obsidian Lantern shrimp violins?",
+      "expected_substrings": [],
+      "expect_empty": true
+    },
+    {
+      "kind": "indirect",
+      "query_type": "negative",
+      "query": "What do we know about Amber Falcon cheese telemetry?",
+      "expected_substrings": [],
+      "expect_empty": true
+    },
+    {
+      "kind": "indirect",
+      "query_type": "negative",
+      "query": "What do we know about Pine Nebula kite syrup?",
+      "expected_substrings": [],
+      "expect_empty": true
+    },
+    {
+      "kind": "indirect",
+      "query_type": "negative",
+      "query": "What do we know about Quartz Meadow volcano yarn?",
+      "expected_substrings": [],
+      "expect_empty": true
+    },
+    {
+      "kind": "indirect",
+      "query_type": "negative",
+      "query": "What do we know about Silver Apricot zephyr noodles?",
+      "expected_substrings": [],
+      "expect_empty": true
+    },
+    {
+      "kind": "indirect",
+      "query_type": "negative",
+      "query": "What do we know about Indigo Briar sand violins?",
+      "expected_substrings": [],
+      "expect_empty": true
+    },
+    {
+      "kind": "indirect",
+      "query_type": "negative",
+      "query": "What do we know about Ruby Orchard lantern syrup?",
+      "expected_substrings": [],
+      "expect_empty": true
+    },
+    {
+      "kind": "indirect",
+      "query_type": "negative",
+      "query": "What do we know about Cedar Comet magnet pears?",
+      "expected_substrings": [],
+      "expect_empty": true
+    },
+    {
+      "kind": "indirect",
+      "query_type": "negative",
+      "query": "What do we know about Saffron Current orchard reactors?",
+      "expected_substrings": [],
+      "expect_empty": true
+    },
+    {
+      "kind": "indirect",
+      "query_type": "negative",
+      "query": "What do we know about Mint Echo coral staplers?",
+      "expected_substrings": [],
+      "expect_empty": true
+    },
+    {
+      "kind": "indirect",
+      "query_type": "negative",
+      "query": "What do we know about Ivory Briar vellum otters?",
+      "expected_substrings": [],
+      "expect_empty": true
+    },
+    {
+      "kind": "indirect",
+      "query_type": "negative",
+      "query": "What do we know about Bronze Thistle kite flour?",
+      "expected_substrings": [],
+      "expect_empty": true
+    },
+    {
+      "kind": "indirect",
+      "query_type": "negative",
+      "query": "What do we know about Quartz Lantern cider satellites?",
+      "expected_substrings": [],
+      "expect_empty": true
+    },
+    {
+      "kind": "indirect",
+      "query_type": "negative",
+      "query": "What do we know about Pearl Tundra mushroom vectors?",
+      "expected_substrings": [],
+      "expect_empty": true
+    },
+    {
+      "kind": "indirect",
+      "query_type": "negative",
+      "query": "What do we know about Walnut Current ribbon soup?",
+      "expected_substrings": [],
+      "expect_empty": true
+    },
+    {
+      "kind": "indirect",
+      "query_type": "negative",
+      "query": "What do we know about Onyx Petal cobalt honey?",
+      "expected_substrings": [],
+      "expect_empty": true
+    },
+    {
+      "kind": "indirect",
+      "query_type": "negative",
+      "query": "What do we know about Golden Reef zephyr pencils?",
+      "expected_substrings": [],
+      "expect_empty": true
+    }
+  ],
+  "supersedes": [
+    [
+      "aurora_ledger_note_v1",
+      "aurora_ledger_note_v2"
+    ],
+    [
+      "beacon_routing_note_v1",
+      "beacon_routing_note_v2"
+    ],
+    [
+      "cascade_forms_note_v1",
+      "cascade_forms_note_v2"
+    ],
+    [
+      "drift_signals_note_v1",
+      "drift_signals_note_v2"
+    ],
+    [
+      "ember_archive_note_v1",
+      "ember_archive_note_v2"
+    ],
+    [
+      "fjord_notes_note_v1",
+      "fjord_notes_note_v2"
+    ],
+    [
+      "glacier_alerts_note_v1",
+      "glacier_alerts_note_v2"
+    ],
+    [
+      "harbor_sketch_note_v1",
+      "harbor_sketch_note_v2"
+    ],
+    [
+      "ion_dispatch_note_v1",
+      "ion_dispatch_note_v2"
+    ],
+    [
+      "juniper_queue_note_v1",
+      "juniper_queue_note_v2"
+    ],
+    [
+      "kestrel_index_note_v1",
+      "kestrel_index_note_v2"
+    ],
+    [
+      "lattice_replay_note_v1",
+      "lattice_replay_note_v2"
+    ],
+    [
+      "meridian_cache_note_v1",
+      "meridian_cache_note_v2"
+    ],
+    [
+      "nimbus_review_note_v1",
+      "nimbus_review_note_v2"
+    ],
+    [
+      "orbit_timeline_note_v1",
+      "orbit_timeline_note_v2"
+    ],
+    [
+      "prism_sync_note_v1",
+      "prism_sync_note_v2"
+    ],
+    [
+      "quay_audit_note_v1",
+      "quay_audit_note_v2"
+    ],
+    [
+      "river_threshold_note_v1",
+      "river_threshold_note_v2"
+    ],
+    [
+      "signal_provenance_note_v1",
+      "signal_provenance_note_v2"
+    ],
+    [
+      "tidal_atlas_note_v1",
+      "tidal_atlas_note_v2"
+    ]
+  ]
+}

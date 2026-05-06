@@ -1,0 +1,189 @@
+{
+  "articles": [
+    {
+      "content": "Temporal Semantics in Memory Systems\nMemory systems should distinguish between when a fact became true and when it was written down. In PAM, valid_at expresses the real-world time of validity, while created_at captures storage time. A stale session warning is operational metadata and does not mean the underlying fact is false.",
+      "filename": "article_temporal_memory.txt"
+    },
+    {
+      "content": "Precision and Recall in Local Retrieval\nKeyword retrieval is fast, but broad OR matching can surface distractors when the corpus grows. Good evaluation includes paraphrases, decoy phrases, and negative queries so precision problems are visible. Clean corpora make retrieval look better than it is in real use.",
+      "filename": "article_precision_recall.txt"
+    },
+    {
+      "content": "Copilot Skills as CLI Contracts\nA Copilot skill should call the PAM CLI instead of duplicating ingestion logic. The safest contract is session start, one add per memory, and query --json for machine-readable output. This makes retrieval checks reproducible and easy to audit.",
+      "filename": "article_skill_contracts.txt"
+    },
+    {
+      "content": "Graph Context Beyond Keywords\nGraph context helps when the query only partially overlaps the stored wording. If a note mentions SQLite or Copilot, edges can pull in connected memories that would otherwise be missed. Edge facts matter because they explain why nodes are connected rather than exposing only bare relation labels.",
+      "filename": "article_graph_context.txt"
+    },
+    {
+      "content": "Decay and Retention Policies\nGradual decay is safer than deletion because old decisions can become relevant again. Archiving is a lifecycle outcome, while a stale-session warning is only a prompt for operator caution. Pinning preserves importance and protects critical memories from decay.",
+      "filename": "article_memory_decay.txt"
+    },
+    {
+      "content": "Local-First Sync Boundaries\nLocal-first tools feel safer when failures remain inspectable on the same machine. Optional sync can help teams, but trust comes from keeping primary state nearby, preserving auditability, and avoiding hidden remote dependencies.",
+      "filename": "article_sync_boundaries.txt"
+    },
+    {
+      "content": "Dashboard Output for Reporting Pipelines\nA reporting pipeline may export machine-readable audit events to JSON dashboards and downstream analytics jobs. This article is about reporting infrastructure, not PAM query interfaces, even though it shares terms like machine-readable, output, and audit.",
+      "filename": "article_reporting_distractor.txt"
+    }
+  ],
+  "notes": [
+    "The FTS candidate limit is 50 before graph expansion runs.",
+    "Ranking weights favor text relevance more than recency and importance.",
+    "The --json flag is the stable machine-readable interface for Copilot callers.",
+    "Sessions older than 24 hours are considered stale unless --force is used.",
+    "valid_at captures when a fact was true; created_at captures when PAM stored it.",
+    "File ingestion defaults to source nodes, while plain text notes stay note nodes.",
+    "Access count increases when a memory is returned by retrieval.",
+    "Session groups expose which retrieved nodes came from the same session.",
+    "WAL mode and foreign keys protect local reliability but do not change ranking.",
+    "A reporting pipeline exports machine-readable audit events for dashboards, not for PAM queries.",
+    "Pinning protects a memory from decay by keeping its importance at the maximum.",
+    "Edge facts should be short natural-language explanations instead of bare labels."
+  ],
+  "queries": [
+    {
+      "expected_substrings": [
+        "The --json flag is the stable machine-readable interface for Copilot callers.",
+        "query --json for machine-readable output"
+      ],
+      "query": "What is the stable machine-readable interface for Copilot callers?"
+    },
+    {
+      "expected_substrings": [
+        "Thought: noisy distractors are necessary because clean corpora flatter retrieval quality.",
+        "Good evaluation includes paraphrases, decoy phrases, and negative queries"
+      ],
+      "query": "Why are noisy distractors useful in retrieval evaluation?"
+    },
+    {
+      "expected_substrings": [
+        "valid_at captures when a fact was true; created_at captures when PAM stored it.",
+        "valid_at expresses the real-world time of validity"
+      ],
+      "query": "How do valid_at and created_at differ?"
+    },
+    {
+      "expected_substrings": [
+        "Sessions older than 24 hours are considered stale unless --force is used.",
+        "A stale session warning is operational metadata"
+      ],
+      "query": "What happens when a session is stale?"
+    },
+    {
+      "expected_substrings": [
+        "Thought: decay should lower prominence, not erase historical decisions.",
+        "Gradual decay is safer than deletion"
+      ],
+      "query": "Why prefer gradual decay over deletion?"
+    },
+    {
+      "expected_substrings": [
+        "Edge facts should be short natural-language explanations instead of bare labels.",
+        "Edge facts matter because they explain why nodes are connected"
+      ],
+      "query": "What explains why two nodes are connected?"
+    },
+    {
+      "expected_substrings": [
+        "Graph context helps when the query only partially overlaps the stored wording.",
+        "Thought: graph context only helps when relations explain themselves."
+      ],
+      "query": "How does graph context help with partial keyword matches?"
+    },
+    {
+      "expected_substrings": [
+        "Ranking weights favor text relevance more than recency and importance."
+      ],
+      "query": "Which ranking signal has the highest weight?"
+    },
+    {
+      "expected_substrings": [
+        "The FTS candidate limit is 50 before graph expansion runs."
+      ],
+      "query": "What limit is used before graph expansion?"
+    },
+    {
+      "expected_substrings": [
+        "Thought: local-first systems feel safer because failure modes stay inspectable.",
+        "Local-first tools feel safer when failures remain inspectable on the same machine."
+      ],
+      "query": "Why do local-first systems feel safer?"
+    },
+    {
+      "expected_substrings": [
+        "preserving auditability",
+        "easy to audit"
+      ],
+      "query": "Which memory mentions auditability?"
+    },
+    {
+      "expected_substrings": [
+        "WAL mode and foreign keys protect local reliability but do not change ranking."
+      ],
+      "query": "What mentions WAL mode and foreign keys?"
+    },
+    {
+      "expected_substrings": [
+        "Access count increases when a memory is returned by retrieval."
+      ],
+      "query": "What changes when a memory is retrieved?"
+    },
+    {
+      "expected_substrings": [
+        "Thought: noisy distractors are necessary because clean corpora flatter retrieval quality.",
+        "Clean corpora make retrieval look better than it is in real use."
+      ],
+      "query": "Which memory warns that clean corpora flatter results?"
+    },
+    {
+      "expected_substrings": [
+        "A Copilot skill should call the PAM CLI instead of duplicating ingestion logic."
+      ],
+      "query": "What should a Copilot skill avoid duplicating?"
+    },
+    {
+      "expected_substrings": [
+        "File ingestion defaults to source nodes, while plain text notes stay note nodes."
+      ],
+      "query": "How are file ingestions typed?"
+    },
+    {
+      "expected_substrings": [
+        "A reporting pipeline exports machine-readable audit events for dashboards, not for PAM queries.",
+        "machine-readable audit events to JSON dashboards"
+      ],
+      "query": "Which memory mentions machine-readable audit events for dashboards?"
+    },
+    {
+      "expected_substrings": [
+        "Archiving is a lifecycle outcome, while a stale-session warning is only a prompt for operator caution.",
+        "Thought: stale sessions are an operational warning, not a claim that stored facts are false."
+      ],
+      "query": "What is the relationship between stale and archived?"
+    },
+    {
+      "expected_substrings": [
+        "Session groups expose which retrieved nodes came from the same session."
+      ],
+      "query": "What do session groups reveal?"
+    },
+    {
+      "expect_empty": true,
+      "expected_substrings": [],
+      "query": "What do we know about Kubernetes cluster autoscaling?"
+    }
+  ],
+  "thoughts": [
+    "Thought: noisy distractors are necessary because clean corpora flatter retrieval quality.",
+    "Thought: a Copilot skill earns trust when every answer can be traced to a CLI query.",
+    "Thought: paraphrase handling matters more than raw keyword recall.",
+    "Thought: decay should lower prominence, not erase historical decisions.",
+    "Thought: local-first systems feel safer because failure modes stay inspectable.",
+    "Thought: graph context only helps when relations explain themselves.",
+    "Thought: reproducible tests matter more than impressive demos.",
+    "Thought: stale sessions are an operational warning, not a claim that stored facts are false."
+  ]
+}
