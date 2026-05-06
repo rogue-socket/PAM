@@ -29,6 +29,7 @@ Three suites, sampled with `--max-queries`. Backend `claude` (i.e. `claude -p` f
 | hard (claude_code)           | 20      | 17/20 = 85%   | 0            | 1 / 2 |
 | large (claude_code)          | 20      | 16/20 = 80%   | 0            | 4 / 0 |
 | regression (claude_code)     | 20      | 8/20 = 40%    | 0            | 3 / 9 |
+| **irl** (claude_code, full)  | 38      | 33/38 = 86.8% | 0            | 5 / 0 |
 
 After deducting matcher false-negatives, the effective real-quality numbers are:
 
@@ -36,8 +37,39 @@ After deducting matcher false-negatives, the effective real-quality numbers are:
 - hard: 19/20 = 95%
 - large: 16/20 = 80%
 - regression: 17/20 = 85%
+- irl: 33/38 = 86.8% (no matcher false-negatives in this suite)
 
-Total over the 90-query end-to-end sample: 73/90 = 81.1% raw, ≈82/90 = 91.1% real.
+Total over the 128-query end-to-end sample: 106/128 = 82.8% raw, ≈115/128 = 89.8% real.
+
+## IRL suite — per-category breakdown
+
+The IRL suite is the only one designed to expose real-world mess (vague queries, typos, wrong-premise questions, multi-hop reasoning, time-relative queries). Per-category result:
+
+| Category | Score | Note |
+|----------|-------|------|
+| `vague` | 5/5 ✓ | "what was that auth thing", "the throughput thing" — under-specified queries work |
+| `casual` | 5/5 ✓ | Lowercase / fragment-style queries work |
+| `typo` | 1/1 ✓ | "wat did i fix on apr 15" → correct |
+| `multihop_2` | 5/5 ✓ | 2-hop chained reasoning works |
+| `multihop_3` | 3/3 ✓ | 3-hop chained reasoning works |
+| `multihop_4` | 1/1 ✓ | "based on my preference for X, what would I think about Y" — synthesis works |
+| `partial_id` | 2/2 ✓ | "PR 441" / "test_payment_e2e" lookups work |
+| `negative` | 4/4 ✓ | NO_ANSWER correctly returned for out-of-fixture topics |
+| `out_of_blue` | 1/2 | Bergen coffee found; "who do I report to?" missed |
+| `time_relative` | 1/2 | "the day before Diego started shadowing" found; "what did I do last week?" missed |
+| `demanding` | 3/4 | Multi-part syntheses mostly work; "summarize all Mira's input" missed |
+| `wrong_premise` | 2/4 | Half pushed back on the false premise; half defaulted to NO_ANSWER |
+
+The misses, diagnosed surgically:
+
+- **Q16 / Q17 (wrong_premise)**: retrieval surfaced *the right context that contradicts the premise*. Claude defaulted to NO_ANSWER instead of pushing back. **Answer-prompt issue, not retrieval.** Fix: add "if the question's premise is incorrect based on retrieved context, briefly say so" rule.
+- **Q19 (demanding "summarize all Mira's input")**: retrieval surfaced *exactly the 3 right Mira nodes*. Claude refused to synthesize. **Answer-prompt issue.** Fix: when multiple supporting nodes are present, allow Claude to summarize them.
+- **Q21 (time_relative "what did I do last week?")**: returned **0 nodes**. The deterministic query parser extracted no useful FTS keywords (only stop words). PAM's FTS-led retrieval requires keyword overlap to seed candidates. **Real architectural limitation.** Fix: when intent=`timeline` and `time_range` is set with no keywords, bypass FTS and pull all nodes in the range.
+- **Q24 (out_of_blue "who do I report to?")**: returned 1 node — the login bug, because it matched "Reported by user@acme.com". The 1:1-with-Anya note has no "report" keyword. **Real retrieval limitation.** Fix: synonym / role expansion ("report to" → "manager"), or rely on the answer model to infer "1:1 with Anya" implies reporting structure given enough context.
+
+### What this run is for
+
+The IRL suite is designed to **stress kayo's actual use case**: someone with messy memory state asking real questions. Unlike `hard` and `large` (templated × N scenarios), every IRL query is unique and captures one realistic phrasing. The 5 misses give us 5 actionable items — much higher signal-per-query than the templated suites.
 
 ## Findings
 
