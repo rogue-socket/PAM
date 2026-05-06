@@ -60,7 +60,7 @@ Top-level layout:
 
 ### Retrieval result contract
 
-`RetrievalResult` (see `pam/retrieval/ranker.py`) exposes node buckets (`events`, `entities`, `notes`, `sources`), `relationships`, `conflicts`, `superseded`, `edge_facts`, `graph_explanations`, `session_groups`, `query_meta`, `ordered_nodes`. CLI/agent renderers should use these fields explicitly rather than flattening into prose.
+`RetrievalResult` (see `pam/retrieval/ranker.py`) exposes node buckets (`events`, `entities`, `notes`, `sources`), `relationships`, `conflicts`, `superseded`, `edge_facts`, `graph_explanations`, `session_groups`, `query_meta`, `ordered_nodes`, `score_components`. CLI/agent renderers should use these fields explicitly rather than flattening into prose. `score_components[node_id]` carries the post-weight `{text_relevance, recency, importance, entity_bonus}` breakdown for each surfaced node — the four entries sum exactly to the rank-key.
 
 ## Working rules from `.github/copilot-instructions.md`
 
