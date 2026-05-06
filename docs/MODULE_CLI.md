@@ -161,7 +161,7 @@ Important current behavior:
 - multi-segment graph explanations can now preserve explicit per-segment labels so bridge concepts remain readable even when the bridge node itself is not surfaced as a result node
 - the formatter emits sections for events, notes, sources, entities, conflicts, superseded pairs, and relationships when present
 - the output is capped by `MAX_CONTEXT_CHARS`, currently `4000`
-- when the rendered payload exceeds that budget, the output is truncated and ends with `[truncated]`
+- when the rendered payload exceeds that budget, the truncator preserves the no-dangling-reference invariant: a relationship/conflict/graph-answer line is kept only when every node it references also has its line present in the output. Referenced node lines are admitted before unreferenced ones, and ref lines whose endpoints are evicted are dropped; the output ends with `[truncated]`.
 
 If graph explanations are absent and relationship-answer mode is requested but no explicit relationship hits are present, the relationships section falls back to its normal later position after the node sections.
 
