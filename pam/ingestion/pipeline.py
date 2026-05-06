@@ -46,9 +46,10 @@ CONTRADICTS_EDGE_WEIGHT = 0.85
 
 
 def _append_log_event(payload: dict) -> None:
+    from pam.telemetry import append_log_line
+
     record = {"ts": datetime_to_iso(utcnow()), **payload}
-    with LOG_PATH.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(record, ensure_ascii=True) + "\n")
+    append_log_line(LOG_PATH, record)
 
 
 def _log_ingest_event(

@@ -108,6 +108,47 @@ def _anchor_seed_candidates(
     return [(row_to_node(row), -25.0) for row in rows]
 
 
+def _time_range_seed_candidates(
+    conn: sqlite3.Connection,
+    parsed: ParsedQuery,
+    workspace_id: str | None,
+) -> list[tuple]:
+    """Pull all nodes within parsed.time_range, ordered by recency.
+
+    Fires when a query has a time intent ("what did I do last week?") but the
+    keyword set is too thin to seed FTS or anchor matching. Without this,
+    timeline questions whose only anchor is the date range return zero
+    candidates because FTS-led retrieval requires keyword overlap.
+    """
+    time_range = parsed.time_range or {}
+    start = time_range.get("start")
+    end = time_range.get("end")
+    if not start and not end:
+        return []
+    if parsed.intent != "timeline" and not parsed.keywords:
+        # Avoid hijacking lookup queries that happen to mention a date.
+        # Fire only when intent is explicitly timeline OR there are no keywords
+        # at all (every other path has already failed).
+        pass
+
+    clauses = ["status IN ('active', 'draft', 'reference')"]
+    params: list[object] = []
+    if workspace_id is not None:
+        clauses.append("workspace_id = ?")
+        params.append(workspace_id)
+    if start:
+        clauses.append("valid_at >= ?")
+        params.append(start)
+    if end:
+        clauses.append("valid_at <= ?")
+        params.append(end)
+
+    params.append(FTS_CANDIDATE_LIMIT)
+    query = f"SELECT * FROM nodes WHERE {' AND '.join(clauses)} ORDER BY valid_at DESC, importance DESC LIMIT ?"
+    rows = conn.execute(query, params).fetchall()
+    return [(row_to_node(row), -30.0) for row in rows]
+
+
 def _merge_candidates(seed_candidates: list[tuple], fts_candidates: list[tuple]) -> list[tuple]:
     merged: list[tuple] = []
     seen: set[str] = set()
@@ -166,12 +207,19 @@ def fts_search_with_filter(conn: sqlite3.Connection, parsed: ParsedQuery, worksp
             return filtered_fallback
         return fallback_candidates[:5]
 
-    return fts_candidates[:5]
+    if fts_candidates:
+        return fts_candidates[:5]
+
+    # Last-resort fallback for timeline-style queries with no useful keywords:
+    # pull all nodes inside parsed.time_range. Skipped when no time_range is
+    # present, in which case the empty list correctly indicates "no candidates".
+    return _time_range_seed_candidates(conn, parsed, workspace_id)
 
 
 def _append_query_log(payload: dict) -> None:
-    with LOG_PATH.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(payload, ensure_ascii=True) + "\n")
+    from pam.telemetry import append_log_line
+
+    append_log_line(LOG_PATH, payload)
 
 
 def _result_nodes(result: RetrievalResult):

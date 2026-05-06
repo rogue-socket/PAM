@@ -15,9 +15,10 @@ ELIGIBLE_STATUSES = {"active", "draft", "reference"}
 
 
 def _append_log(payload: dict) -> None:
+    from pam.telemetry import append_log_line
+
     record = {"ts": utcnow_iso(), **payload}
-    with LOG_PATH.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(record) + "\n")
+    append_log_line(LOG_PATH, record)
 
 
 def compute_decayed_importance(node: Node, now: datetime) -> float:

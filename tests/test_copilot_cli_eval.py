@@ -256,6 +256,46 @@ class CopilotCliEvalHarnessTests(unittest.TestCase):
             args = eval_module._parse_args()
         self.assertEqual(args.model, "claude-opus-4-7")
 
+    def test_answer_passes_strict_substring_direction(self) -> None:
+        """Original direction: expected substring is contained in the answer."""
+        case = {"expected_substrings": ["the Reykjavik annex"]}
+        self.assertTrue(eval_module._answer_passes("HLD snapshots stay in the Reykjavik annex", case))
+
+    def test_answer_passes_reverse_direction_for_terse_correct_answers(self) -> None:
+        """Reverse direction: a terse-but-correct answer is contained in the expected.
+
+        Without this, an answer "Reykjavik annex" against expected
+        "the Reykjavik annex" fails because canonical_expected (longer) is
+        not in canonical_answer (shorter).
+        """
+        case = {"expected_substrings": ["the Reykjavik annex"]}
+        self.assertTrue(eval_module._answer_passes("Reykjavik annex", case))
+
+    def test_answer_passes_reverse_direction_requires_min_tokens(self) -> None:
+        """Single-token answers must NOT trigger reverse-direction match."""
+        case = {"expected_substrings": ["the Reykjavik annex stores HLD snapshots"]}
+        self.assertFalse(eval_module._answer_passes("the", case))
+
+    def test_answer_passes_terse_two_token_answer_matches_verbose_expected(self) -> None:
+        """Two-token answer like `Text relevance` should match a long policy sentence
+        that contains those two words."""
+        case = {
+            "expected_substrings": [
+                "Ranking weights favor text relevance more than recency and importance"
+            ]
+        }
+        self.assertTrue(eval_module._answer_passes("Text relevance", case))
+
+    def test_answer_passes_expect_empty_requires_no_answer_token(self) -> None:
+        case = {"expect_empty": True}
+        self.assertTrue(eval_module._answer_passes("NO_ANSWER", case))
+        self.assertFalse(eval_module._answer_passes("Some content", case))
+
+    def test_answer_passes_unrelated_terse_answer_still_fails(self) -> None:
+        """Reverse direction must not let unrelated 2-token answers slip through."""
+        case = {"expected_substrings": ["the Reykjavik annex"]}
+        self.assertFalse(eval_module._answer_passes("blue cheese", case))
+
     def test_eval_paths_recreates_only_requested_suite_directory(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_root = Path(temp_dir)

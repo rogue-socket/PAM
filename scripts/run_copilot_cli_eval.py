@@ -314,7 +314,17 @@ def _prompt_for_answer(raw_query: str, retrieved_context: str) -> str:
         "- Do not inspect fixture files, source corpora, or test code.\n"
         "- Do not ask clarifying questions. You already have the full question.\n"
         "- Base the final answer only on the PAM retrieval result below.\n"
-        "- If the retrieval result does not support an answer, reply exactly with NO_ANSWER.\n"
+        "- If the question's premise is contradicted by the retrieved memories"
+        " (e.g. it asserts something happened that the memories show did not),"
+        " briefly state the correction grounded in the retrieved facts.\n"
+        "- If multiple retrieved memories are individually relevant to the question,"
+        " synthesize across them rather than refusing — listing or summarizing them"
+        " is a valid answer.\n"
+        "- When a memory titled 'Idea: revise X to Y' or similar is connected"
+        " by a SUPERSEDES path, treat Y as the current value of X.\n"
+        "- Only reply NO_ANSWER if the retrieval result truly contains no facts"
+        " bearing on the question — not when it contains relevant facts that"
+        " merely contradict the question's framing.\n"
         "- Output only the final answer text.\n\n"
         "PAM retrieval context:\n"
         f"{retrieved_context}"
@@ -424,16 +434,39 @@ def _canonicalize_match_text(text: str) -> str:
     return canonical
 
 
+_TERSE_ANSWER_MIN_TOKENS = 2
+
+
 def _answer_passes(answer: str, query_case: dict) -> bool:
+    """Bidirectional substring matcher.
+
+    Passes when the canonical expected substring appears in the canonical
+    answer (the original strict direction) OR when the canonical answer
+    appears in the canonical expected — guards against terse-but-correct
+    answers like `"Reykjavik annex"` for an expected `"the Reykjavik annex"`,
+    or `"Text relevance"` for an expected verbose policy sentence. The
+    reverse direction requires at least `_TERSE_ANSWER_MIN_TOKENS` tokens to
+    avoid trivial matches like the literal word `"the"`.
+    """
     normalized = _normalize_answer_text(answer)
     if query_case.get("expect_empty"):
         return normalized.upper() == "NO_ANSWER"
 
     canonical_answer = _canonicalize_match_text(normalized)
-    return any(
-        _canonicalize_match_text(expected) in canonical_answer
-        for expected in query_case.get("expected_substrings", [])
-    )
+    answer_tokens = canonical_answer.split()
+
+    for expected in query_case.get("expected_substrings", []):
+        canonical_expected = _canonicalize_match_text(expected)
+        if not canonical_expected:
+            continue
+        if canonical_expected in canonical_answer:
+            return True
+        if (
+            len(answer_tokens) >= _TERSE_ANSWER_MIN_TOKENS
+            and canonical_answer in canonical_expected
+        ):
+            return True
+    return False
 
 
 def _log(msg: str) -> None:

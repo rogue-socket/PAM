@@ -21,9 +21,10 @@ SUPERSEDE_TYPES = {"note", "entity"}
 
 
 def _append_log(payload: dict) -> None:
+    from pam.telemetry import append_log_line
+
     record = {"ts": utcnow_iso(), **payload}
-    with LOG_PATH.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(record) + "\n")
+    append_log_line(LOG_PATH, record)
 
 
 def _get_feedback_node(conn: sqlite3.Connection, node_id: str) -> Node | None:

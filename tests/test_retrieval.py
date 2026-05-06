@@ -330,6 +330,61 @@ class RetrievalModuleTests(unittest.TestCase):
             chunks.extend([node.title, node.content, node.summary])
         return "\n".join(chunk for chunk in chunks if chunk)
 
+    def test_fts_search_falls_back_to_time_range_when_keywords_have_no_recall(self) -> None:
+        """Timeline queries with only stop-words ("what did I do last week?") used to
+        return zero candidates because FTS-led retrieval requires keyword overlap.
+        With the time-range fallback, all in-range nodes surface."""
+        in_range_id = create_node(
+            self.conn,
+            make_node(
+                title="Mentoring 1:1 with Diego",
+                content="paired on a real bug",
+                valid_at=datetime(2026, 4, 29, 14, 0, tzinfo=timezone.utc),
+            ),
+        )
+        out_of_range_id = create_node(
+            self.conn,
+            make_node(
+                title="Older note",
+                content="this is older than the window",
+                valid_at=datetime(2026, 3, 1, 10, 0, tzinfo=timezone.utc),
+            ),
+        )
+        archived_in_range_id = create_node(
+            self.conn,
+            make_node(
+                title="Archived but in range",
+                content="should be excluded",
+                valid_at=datetime(2026, 4, 30, 12, 0, tzinfo=timezone.utc),
+                status="archived",
+            ),
+        )
+
+        parsed = ParsedQuery(
+            keywords=[],
+            entities=[],
+            time_range={"start": "2026-04-27T00:00:00+00:00", "end": "2026-05-04T23:59:59+00:00"},
+            intent="timeline",
+        )
+        results = fts_search_with_filter(self.conn, parsed, workspace_id=resolve_workspace_id())
+        result_ids = [node.id for node, _ in results]
+
+        self.assertIn(in_range_id, result_ids)
+        self.assertNotIn(out_of_range_id, result_ids)
+        self.assertNotIn(archived_in_range_id, result_ids)
+
+    def test_fts_search_time_range_fallback_skipped_when_no_time_range(self) -> None:
+        """Without a time_range, no fallback; empty result is correct."""
+        create_node(self.conn, make_node(title="Whatever", content="something"))
+        parsed = ParsedQuery(
+            keywords=["nonexistent_token_xyz"],
+            entities=[],
+            time_range=None,
+            intent="timeline",
+        )
+        results = fts_search_with_filter(self.conn, parsed, workspace_id=resolve_workspace_id())
+        self.assertEqual(results, [])
+
     def test_fts_search_returns_matching_node(self) -> None:
         matching_id = create_node(self.conn, make_node(title="Alpha retrieval", content="pipeline", summary="fts"))
         create_node(self.conn, make_node(title="Beta unrelated", content="other", summary="none"))
