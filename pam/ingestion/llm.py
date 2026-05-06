@@ -10,13 +10,10 @@ from config import (
     LLM_TIMEOUT_SECONDS,
     MAX_ENTITIES_PER_INGESTION,
 )
+from pam.llm_clients import LLMUnavailableError, call_claude_code, unwrap_json_response
 
 
 logger = logging.getLogger(__name__)
-
-
-class LLMUnavailableError(RuntimeError):
-    """Raised when the configured LLM provider is unavailable locally."""
 
 SUMMARY_PROMPT = """You are a memory assistant. Summarize the following in 1–2 sentences, capturing the key idea.
 Return ONLY the summary string. No preamble, no quotes.
@@ -109,6 +106,13 @@ def _call_llm(prompt: str) -> str:
         )
         return _extract_openai_text(response)
 
+    if provider == "claude_code":
+        return call_claude_code(
+            prompt,
+            model=os.getenv("CLAUDE_CODE_MODEL"),
+            timeout=LLM_TIMEOUT_SECONDS,
+        )
+
     raise ValueError(f"Unsupported LLM provider: {LLM_PROVIDER}")
 
 
@@ -131,7 +135,7 @@ def extract_entities(content: str) -> list[dict]:
         return []
 
     try:
-        payload = json.loads(raw_response)
+        payload = json.loads(unwrap_json_response(raw_response))
     except json.JSONDecodeError as exc:
         logger.warning("LLM entity extraction returned invalid JSON: %s", exc)
         return []

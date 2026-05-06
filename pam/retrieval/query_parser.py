@@ -9,6 +9,11 @@ from datetime import date, datetime, time, timedelta, timezone
 from typing import Literal
 
 from config import LLM_PROVIDER, LLM_TIMEOUT_SECONDS
+from pam.llm_clients import (
+    LLMUnavailableError as _SharedLLMUnavailableError,
+    call_claude_code,
+    unwrap_json_response,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -22,8 +27,11 @@ BEFORE_PATTERN = re.compile(r"\bbefore\s+(\d{4}-\d{2}-\d{2})\b")
 TIMELINE_HINT_PATTERN = re.compile(r"\b(when|timeline|history|recent|recently|earlier|latest|today|yesterday|week)\b")
 
 
-class LLMUnavailableError(RuntimeError):
-    """Raised when the configured LLM provider is unavailable locally."""
+# Re-exported alias of the canonical exception in pam.llm_clients so existing
+# importers (`from pam.retrieval.query_parser import LLMUnavailableError`) keep
+# working AND `except LLMUnavailableError` catches the same class regardless of
+# which module raised it.
+LLMUnavailableError = _SharedLLMUnavailableError
 
 VALID_INTENTS = {"lookup", "timeline", "summarize", "reason"}
 VALID_RELATIONS = {"REFERS_TO", "DERIVED_FROM", "RELATED", "CONTRADICTS", "SUPERSEDES"}
@@ -531,6 +539,13 @@ def _invoke_llm(raw_query: str, today: date) -> str:
         )
         return _extract_openai_text(response)
 
+    if provider == "claude_code":
+        return call_claude_code(
+            prompt,
+            model=os.getenv("CLAUDE_CODE_MODEL"),
+            timeout=LLM_TIMEOUT_SECONDS,
+        )
+
     raise RuntimeError(f"Unsupported LLM provider: {LLM_PROVIDER}")
 
 
@@ -676,7 +691,7 @@ def parse_query_with_metadata(raw_query: str, today: date | None = None) -> tupl
     current_date = today or date.today()
     try:
         response = _invoke_llm(raw_query, current_date)
-        payload = json.loads(response)
+        payload = json.loads(unwrap_json_response(response))
         if not isinstance(payload, dict):
             raise ValueError("LLM response must be a JSON object")
         return _normalize_parsed_query(payload, raw_query), False

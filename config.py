@@ -40,5 +40,8 @@ IMPORTANCE_MIN = 0.0
 IMPORTANCE_DEFAULT = 0.5
 
 # LLM
-LLM_PROVIDER = "anthropic"
-LLM_TIMEOUT_SECONDS = 30
+# Provider is env-driven so the same install can run with an Anthropic key,
+# an OpenAI key, or shell out to the Claude Code CLI when no API key is set.
+# Valid values: "anthropic", "openai", "claude_code".
+LLM_PROVIDER = os.getenv("PAM_LLM_PROVIDER", "anthropic")
+LLM_TIMEOUT_SECONDS = int(os.getenv("PAM_LLM_TIMEOUT_SECONDS", "30"))
