@@ -143,6 +143,7 @@ class RetrievalResult:
     ordered_nodes: list[Node] = field(default_factory=list)
     relationships: list[Edge] = field(default_factory=list)
     graph_explanations: list[GraphExplanation] = field(default_factory=list)
+    score_components: dict[str, dict[str, float]] = field(default_factory=dict)
 ```
 
 Public exports:
@@ -151,7 +152,7 @@ Public exports:
 - `GraphPathSegment`
 - `RetrievalResult`
 - `days_since(dt, now)`
-- `score(node, fts_rank, entity_boost, now)`
+- `score(node, fts_rank, entity_boost, now) -> (total, components)`
 - `rank_and_assemble(conn, candidates, expanded, parsed, top_k=None)`
 
 Important current behavior:
@@ -161,6 +162,7 @@ Important current behavior:
 - `relationships` is now a first-class result field
 - `query_meta` now carries `question_shape` and `anchor_terms` alongside intent and relation metadata
 - `graph_explanations` now surfaces compact path, bridge, cluster, and sparse-evidence summaries for downstream renderers
+- `score_components` carries per-node `{text_relevance, recency, importance, entity_bonus}` post-weight contributions for nodes in `ordered_nodes`; the four entries sum to the rank-key under the same float arithmetic
 - in relationship mode, edges are ranked first and nodes are selected around those edges
 - when explicit relationship hits are absent, support paths can still drive node ordering for influence, connection, theme, gap, and evolution prompts
 - direct connection paths can now be inferred from entity-to-entity `RELATED` chains instead of only explicit note-to-note edges
