@@ -103,6 +103,11 @@ SUITE_SPECS = {
         "loader": "load_hard_eval_fixture",
         "label": "HardAgentEvaluationSuiteTests",
     },
+    "regression": {
+        "module": "tests.regression_eval_fixture",
+        "loader": "load_regression_eval_fixture",
+        "label": "RetrievalRegressionEvalSuite",
+    },
 }
 
 

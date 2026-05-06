@@ -28,14 +28,16 @@ Three suites, sampled with `--max-queries`. Backend `claude` (i.e. `claude -p` f
 | detailed (deterministic)     | 30      | 28/30 = 93.3% | 30 (expected) | 0 / 2 |
 | hard (claude_code)           | 20      | 17/20 = 85%   | 0            | 1 / 2 |
 | large (claude_code)          | 20      | 16/20 = 80%   | 0            | 4 / 0 |
+| regression (claude_code)     | 20      | 8/20 = 40%    | 0            | 3 / 9 |
 
 After deducting matcher false-negatives, the effective real-quality numbers are:
 
 - detailed: 30/30 = 100%
 - hard: 19/20 = 95%
 - large: 16/20 = 80%
+- regression: 17/20 = 85%
 
-Total over the 70-query end-to-end sample: 65/70 = 92.9% raw, ≈68/70 = 97% real.
+Total over the 90-query end-to-end sample: 73/90 = 81.1% raw, ≈82/90 = 91.1% real.
 
 ## Findings
 
@@ -58,6 +60,13 @@ The `claude_code` provider is still useful when:
 **hard** — 2/3 misses are matcher direction-of-substring issues:
 - Q3: `"Where must HLD snapshots stay before redaction?"` → answer `"Reykjavik annex"`. Expected `["Harbor Ledger", "the Reykjavik annex"]`. The matcher does `expected_substring in answer`, but the answer is *shorter* than the expected. `"the reykjavik annex" in "reykjavik annex"` is `False`.
 - Q15: same shape, `"Bergen vault"` vs `"the Bergen vault"`.
+
+**regression** — 9/12 misses are matcher false-negatives. The regression corpus uses *more specific verbose expected substrings* than the other suites (often the literal note text), so the matcher rejects almost every paraphrased correct answer. Sample:
+- Q6 `"What explains why two nodes are connected?"` → answer `"Edge facts explain why nodes are connected rather than exposing only bare relation labels"`. Expected `"Edge facts matter because they explain why nodes are connected"`. Same fact, different framing.
+- Q8 `"Which ranking signal has the highest weight?"` → answer `"Text relevance"`. Expected `"Ranking weights favor text relevance more than recency and importance"`. Terse correct answer.
+- Q9 `"What limit is used before graph expansion?"` → answer `"50 (the FTS candidate limit)"`. Expected `"The FTS candidate limit is 50 before graph expansion runs"`.
+
+The 3 *real* regression misses (Q11, Q14, Q17) are all `"Which memory mentions X?"` patterns where the answer LLM either picks the wrong memory or fails to list all relevant memories. This is a different failure mode from F3 — the retrieval brings back multiple candidates, and the answer model has to pick the right one based on phrasing alone.
 
 **Recommended fix** (eval-matcher tightening, audit O4-adjacent):
 ```python
@@ -104,7 +113,7 @@ The new target `2026-05-26` is in the title, in the content, and in the SUPERSED
 
 ### F4 — `claude_code` provider works end-to-end with zero auth surface
 
-Across 70 end-to-end queries with `PAM_LLM_PROVIDER=claude_code`, **zero "Falling back to deterministic query parsing" warnings**. Compare to the deterministic baseline run which logged the warning on all 30 queries (expected — anthropic SDK with no key fails authentication). The new `unwrap_json_response` helper in `pam/llm_clients.py` correctly extracts JSON from Claude Code's wrapped responses (markdown fences, prose preambles).
+Across 90 end-to-end queries with `PAM_LLM_PROVIDER=claude_code`, **zero "Falling back to deterministic query parsing" warnings**. Compare to the deterministic baseline run which logged the warning on all 30 queries (expected — anthropic SDK with no key fails authentication). The new `unwrap_json_response` helper in `pam/llm_clients.py` correctly extracts JSON from Claude Code's wrapped responses (markdown fences, prose preambles).
 
 ## Performance notes
 
@@ -118,7 +127,7 @@ In priority order, all of these are concrete and tied to specific code paths:
 
 1. **Tighten eval matcher** (bidirectional containment with min-length). Touches `scripts/run_copilot_cli_eval.py:_answer_passes`. Likely lifts hard from 17/20 to 19/20 and detailed from 28/30 to 30/30 — same answers, no model change.
 2. **Add `## Current values` section to retrieval context** when SUPERSEDES paths are present. Touches `pam/agent_interface.py:format_for_context_window` and the eval's `_render_retrieval_context`. Targets F3 directly. Audit O8 adjacent.
-3. **Run the full suites end-to-end** (110 / 192 / 200) once F3 is mitigated, to publish a real PAM-quality number against the fixtures.
+3. **Run the full suites end-to-end** (110 / 192 / 200 / 20) once F3 is mitigated, to publish a real PAM-quality number against the fixtures. The regression corpus showed F2 most starkly because its expected substrings match note text literally — fixing the matcher is a prerequisite for an honest regression number.
 4. **Pin `claude_code` to claude-haiku-4-5** for query parsing (`CLAUDE_CODE_MODEL` env), keep `claude-sonnet-4-5` for answer (`--model`). Already done in this session via env vars; promote to a config knob.
 
 ## Reproducing
