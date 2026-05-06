@@ -195,6 +195,99 @@ class AgentInterfaceTests(unittest.TestCase):
         self.assertIn('"docs.example.com" supersedes "CLI wiring"', rendered)
         self.assertIn('"CLI wiring" DERIVED_FROM "docs.example.com" - "note derived from source"', rendered)
 
+    def test_format_for_context_window_truncation_keeps_referenced_endpoints(self) -> None:
+        # 80 notes whose content easily exceeds MAX_CONTEXT_CHARS. A single
+        # relationship references the very last note — the one most likely
+        # to be cut by naive truncation.
+        filler = "x" * 60
+        notes = [
+            make_node(
+                node_id=f"note-{i}",
+                title=f"Note {i}",
+                summary=f"Summary {i} {filler}",
+                content=f"Content {i} {filler}",
+            )
+            for i in range(80)
+        ]
+        last_id = notes[-1].id
+        first_id = notes[0].id
+        relationship = Edge(
+            source_id=first_id,
+            target_id=last_id,
+            relation="REFERS_TO",
+            weight=1.0,
+            fact="first refers to last",
+            created_at=datetime(2026, 4, 22, tzinfo=timezone.utc),
+        )
+
+        result = RetrievalResult(
+            events=[],
+            entities=[],
+            notes=notes,
+            sources=[],
+            conflicts=[],
+            superseded=[],
+            edge_facts={},
+            session_groups={},
+            query_meta={"answer_mode": "relationship"},
+            relationships=[relationship],
+        )
+
+        rendered = format_for_context_window(result)
+
+        self.assertLessEqual(len(rendered), 4000)
+        self.assertIn("[truncated]", rendered)
+        # The relationship is at the top under relationship-first mode.
+        self.assertIn('"Note 0" REFERS_TO "Note 79"', rendered)
+        # Both endpoints' detail lines must survive — otherwise the
+        # relationship line dangles.
+        self.assertIn("[Note 0]", rendered)
+        self.assertIn("[Note 79]", rendered)
+
+    def test_format_for_context_window_drops_relationships_whose_endpoints_are_evicted(self) -> None:
+        # Construct a case where node lines are kept but a relationship's
+        # endpoint lookup id is NOT in any node section. The relationship
+        # must be dropped to preserve the no-dangling-reference invariant.
+        filler = "y" * 60
+        notes = [
+            make_node(
+                node_id=f"note-{i}",
+                title=f"Note {i}",
+                summary=f"Summary {i} {filler}",
+                content=f"Content {i} {filler}",
+            )
+            for i in range(80)
+        ]
+        ghost_relationship = Edge(
+            source_id="note-0",
+            target_id="ghost-id-not-in-any-section",
+            relation="REFERS_TO",
+            weight=1.0,
+            fact="first refers to ghost",
+            created_at=datetime(2026, 4, 22, tzinfo=timezone.utc),
+        )
+
+        result = RetrievalResult(
+            events=[],
+            entities=[],
+            notes=notes,
+            sources=[],
+            conflicts=[],
+            superseded=[],
+            edge_facts={},
+            session_groups={},
+            query_meta={"answer_mode": "relationship"},
+            relationships=[ghost_relationship],
+        )
+
+        rendered = format_for_context_window(result)
+
+        self.assertLessEqual(len(rendered), 4000)
+        # Relationship line must NOT appear because its target was never
+        # introduced as a node.
+        self.assertNotIn("ghost-id-not-in-any-section", rendered)
+        self.assertNotIn("first refers to ghost", rendered)
+
 
 class ChatAgentTests(unittest.TestCase):
     def test_answer_with_pam_uses_retrieved_context_and_prompt_runner(self) -> None:

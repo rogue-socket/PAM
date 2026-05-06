@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse
@@ -15,6 +15,17 @@ from pam.retrieval.search import retrieve
 
 MAX_CONTEXT_CHARS = 4000
 SECTION_DIVIDER = "---"
+
+
+@dataclass
+class _LineItem:
+    """A single output line plus enough metadata to truncate without
+    leaving relationship lines pointing at dropped node lines."""
+
+    text: str
+    kind: str  # "structural" | "node" | "ref"
+    node_id: str | None = None
+    refs: frozenset[str] = field(default_factory=frozenset)
 
 
 @dataclass
@@ -106,64 +117,155 @@ def query_for_agent(raw_query: str, top_k: int | None = None, workspace_id: str 
 def format_for_context_window(result: RetrievalResult) -> str:
     """Render retrieved memories into a compact context block for coding agents."""
     all_nodes = [*result.events, *result.notes, *result.sources, *result.entities]
-    lines = [SECTION_DIVIDER, f"## Retrieved Memories ({len(all_nodes)} results)"]
     node_lookup = {node.id: node for node in all_nodes}
     graph_answer_first = bool(result.graph_explanations)
     relationship_first = result.query_meta.get("answer_mode") == "relationship" and bool(result.relationships)
 
+    items: list[_LineItem] = []
     if graph_answer_first:
-        _append_graph_answer(lines, result.graph_explanations)
+        _plan_graph_answer(items, result.graph_explanations)
     elif relationship_first:
-        _append_relationships(lines, result.relationships, result.edge_facts, node_lookup)
+        _plan_relationships(items, result.relationships, result.edge_facts, node_lookup)
 
-    _append_node_section(lines, "Events", result.events)
-    _append_node_section(lines, "Notes", result.notes)
-    _append_node_section(lines, "Sources", result.sources)
-    _append_node_section(lines, "Entities", result.entities)
-    _append_conflict_section(lines, "Conflicts", result.conflicts, "contradicts", node_lookup)
-    _append_conflict_section(lines, "Superseded", result.superseded, "supersedes", node_lookup)
+    _plan_node_section(items, "Events", result.events)
+    _plan_node_section(items, "Notes", result.notes)
+    _plan_node_section(items, "Sources", result.sources)
+    _plan_node_section(items, "Entities", result.entities)
+    _plan_conflict_section(items, "Conflicts", result.conflicts, "contradicts", node_lookup)
+    _plan_conflict_section(items, "Superseded", result.superseded, "supersedes", node_lookup)
     if not graph_answer_first and not relationship_first:
-        _append_relationships(lines, result.relationships, result.edge_facts, node_lookup)
-    lines.append(SECTION_DIVIDER)
+        _plan_relationships(items, result.relationships, result.edge_facts, node_lookup)
 
-    rendered = "\n".join(lines)
+    header = [SECTION_DIVIDER, f"## Retrieved Memories ({len(all_nodes)} results)"]
+    full_lines = [*header, *(item.text for item in items), SECTION_DIVIDER]
+    rendered = "\n".join(full_lines)
     if len(rendered) <= MAX_CONTEXT_CHARS:
         return rendered
 
-    truncated_lines = [SECTION_DIVIDER, f"## Retrieved Memories ({len(all_nodes)} results)"]
-    budget = MAX_CONTEXT_CHARS - len(SECTION_DIVIDER) - len("\n[truncated]") - 1
-    for line in lines[2:-1]:
-        if len("\n".join([*truncated_lines, line, SECTION_DIVIDER, "[truncated]"])) > budget:
-            break
-        truncated_lines.append(line)
-    truncated_lines.extend([SECTION_DIVIDER, "[truncated]"])
-    return "\n".join(truncated_lines)
+    return _truncate_preserving_refs(items, header)
 
 
-def _append_graph_answer(lines: list[str], explanations: Iterable[GraphExplanation]) -> None:
+def _truncate_preserving_refs(items: list[_LineItem], header: list[str]) -> str:
+    """Greedy two-pass truncation that preserves the no-dangling-reference
+    invariant: a "ref" line is kept only if every node it references has its
+    own line in the output. Node lines whose ids are referenced by any
+    candidate ref are kept first; remaining nodes fill leftover budget;
+    refs are admitted last and skipped if their endpoints aren't present."""
+    suffix = [SECTION_DIVIDER, "[truncated]"]
+    base = "\n".join([*header, *suffix])
+    budget = MAX_CONTEXT_CHARS - len(base)
+
+    referenced_ids: set[str] = set()
+    for item in items:
+        if item.kind == "ref":
+            referenced_ids |= item.refs
+
+    selected: set[int] = set()
+    used = 0
+
+    def cost(text: str) -> int:
+        return len(text) + 1  # one newline per line
+
+    # Pass 1a: must-keep node lines (referenced by some ref) + structural lines.
+    for i, item in enumerate(items):
+        if item.kind == "node" and item.node_id in referenced_ids:
+            selected.add(i)
+            used += cost(item.text)
+        elif item.kind == "structural":
+            addition = cost(item.text)
+            if used + addition <= budget:
+                selected.add(i)
+                used += addition
+
+    # Pass 1b: remaining node lines, greedily.
+    for i, item in enumerate(items):
+        if i in selected or item.kind != "node":
+            continue
+        addition = cost(item.text)
+        if used + addition <= budget:
+            selected.add(i)
+            used += addition
+
+    selected_node_ids = {items[i].node_id for i in selected if items[i].kind == "node"}
+
+    # Pass 2: ref lines whose endpoints are all present.
+    for i, item in enumerate(items):
+        if item.kind != "ref":
+            continue
+        if not item.refs.issubset(selected_node_ids):
+            continue
+        addition = cost(item.text)
+        if used + addition <= budget:
+            selected.add(i)
+            used += addition
+
+    # Drop any structural line that has no body following it before the next
+    # structural header (avoids an empty "### Relationships" with no entries).
+    selected = _drop_orphaned_section_headers(items, selected)
+
+    output = list(header)
+    for i, item in enumerate(items):
+        if i in selected:
+            output.append(item.text)
+    output.extend(suffix)
+    return "\n".join(output)
+
+
+def _drop_orphaned_section_headers(items: list[_LineItem], selected: set[int]) -> set[int]:
+    """Remove a section header (e.g. '### Relationships') if no node/ref
+    line under it survived selection. Keeps blanks/dividers intact."""
+    kept = set(selected)
+    n = len(items)
+    for i, item in enumerate(items):
+        if i not in kept or item.kind != "structural":
+            continue
+        if not item.text.startswith("### "):
+            continue
+        has_content = False
+        for j in range(i + 1, n):
+            other = items[j]
+            if other.kind == "structural" and other.text.startswith("### "):
+                break
+            if j in kept and other.kind in ("node", "ref"):
+                has_content = True
+                break
+        if not has_content:
+            kept.discard(i)
+    return kept
+
+
+def _plan_graph_answer(items: list[_LineItem], explanations: Iterable[GraphExplanation]) -> None:
     materialized = list(explanations)
     if not materialized:
         return
 
-    lines.append("")
-    lines.append("### Graph Answer")
+    items.append(_LineItem(text="", kind="structural"))
+    items.append(_LineItem(text="### Graph Answer", kind="structural"))
     for explanation in materialized:
-        lines.append(f"- {explanation.title}: {explanation.summary}")
+        items.append(
+            _LineItem(
+                text=f"- {explanation.title}: {explanation.summary}",
+                kind="ref",
+                refs=frozenset(explanation.node_ids),
+            )
+        )
 
 
-def _append_node_section(lines: list[str], title: str, nodes: Iterable[Node]) -> None:
+def _plan_node_section(items: list[_LineItem], title: str, nodes: Iterable[Node]) -> None:
     materialized = list(nodes)
     if not materialized:
         return
 
-    lines.append("")
-    lines.append(f"### {title}")
+    items.append(_LineItem(text="", kind="structural"))
+    items.append(_LineItem(text=f"### {title}", kind="structural"))
     for node in materialized:
-        lines.append(f"- {_format_node_line(node)}")
+        items.append(
+            _LineItem(text=f"- {_format_node_line(node)}", kind="node", node_id=node.id)
+        )
 
 
-def _append_conflict_section(
-    lines: list[str],
+def _plan_conflict_section(
+    items: list[_LineItem],
     title: str,
     pairs: Iterable[tuple[str, str]],
     verb: str,
@@ -173,14 +275,20 @@ def _append_conflict_section(
     if not materialized:
         return
 
-    lines.append("")
-    lines.append(f"### {title}")
+    items.append(_LineItem(text="", kind="structural"))
+    items.append(_LineItem(text=f"### {title}", kind="structural"))
     for left_id, right_id in materialized:
-        lines.append(f"- \"{_node_label(left_id, node_lookup)}\" {verb} \"{_node_label(right_id, node_lookup)}\"")
+        items.append(
+            _LineItem(
+                text=f"- \"{_node_label(left_id, node_lookup)}\" {verb} \"{_node_label(right_id, node_lookup)}\"",
+                kind="ref",
+                refs=frozenset({left_id, right_id}),
+            )
+        )
 
 
-def _append_relationships(
-    lines: list[str],
+def _plan_relationships(
+    items: list[_LineItem],
     relationships: list[Edge],
     edge_facts: dict[tuple[str, str], str],
     node_lookup: dict[str, Node],
@@ -188,28 +296,40 @@ def _append_relationships(
     if not relationships and not edge_facts:
         return
 
-    lines.append("")
-    lines.append("### Relationships")
+    items.append(_LineItem(text="", kind="structural"))
+    items.append(_LineItem(text="### Relationships", kind="structural"))
     if relationships:
         for edge in relationships:
             fact = edge.fact.strip() or edge_facts.get((edge.source_id, edge.target_id), "").strip()
             if fact:
-                lines.append(
-                    f'- "{_node_label(edge.source_id, node_lookup)}" {edge.relation} "{_node_label(edge.target_id, node_lookup)}" - "{fact}"'
+                text = (
+                    f'- "{_node_label(edge.source_id, node_lookup)}" {edge.relation}'
+                    f' "{_node_label(edge.target_id, node_lookup)}" - "{fact}"'
                 )
             else:
-                lines.append(
-                    f'- "{_node_label(edge.source_id, node_lookup)}" {edge.relation} "{_node_label(edge.target_id, node_lookup)}"'
+                text = (
+                    f'- "{_node_label(edge.source_id, node_lookup)}" {edge.relation}'
+                    f' "{_node_label(edge.target_id, node_lookup)}"'
                 )
+            items.append(
+                _LineItem(text=text, kind="ref", refs=frozenset({edge.source_id, edge.target_id}))
+            )
         return
 
     for (source_id, target_id), fact in edge_facts.items():
         if fact:
-            lines.append(
-                f"- \"{_node_label(source_id, node_lookup)}\" RELATED \"{_node_label(target_id, node_lookup)}\" - \"{fact.strip()}\""
+            text = (
+                f"- \"{_node_label(source_id, node_lookup)}\" RELATED"
+                f" \"{_node_label(target_id, node_lookup)}\" - \"{fact.strip()}\""
             )
         else:
-            lines.append(f"- \"{_node_label(source_id, node_lookup)}\" RELATED \"{_node_label(target_id, node_lookup)}\"")
+            text = (
+                f"- \"{_node_label(source_id, node_lookup)}\" RELATED"
+                f" \"{_node_label(target_id, node_lookup)}\""
+            )
+        items.append(
+            _LineItem(text=text, kind="ref", refs=frozenset({source_id, target_id}))
+        )
 
 
 def _format_node_line(node: Node) -> str:
