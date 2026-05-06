@@ -1,0 +1,457 @@
+{
+  "corpus": [
+    {
+      "key": "auth_v1",
+      "at": "2026-04-10T09:30:00+00:00",
+      "session": "irl",
+      "ingest_kind": "note",
+      "text": "Login flow breaks when user has multiple sessions open. Reproduces only on Chrome, not Firefox. Reported by user@acme.com via support."
+    },
+    {
+      "key": "auth_v2_jwt",
+      "at": "2026-04-12T14:15:00+00:00",
+      "session": "irl",
+      "ingest_kind": "note",
+      "text": "Confirmed the multi-session login bug is in JWT refresh handler. Old token shadows the new one in a race when two tabs hit /auth/refresh inside 50ms."
+    },
+    {
+      "key": "auth_v3_correction",
+      "at": "2026-04-13T11:00:00+00:00",
+      "session": "irl",
+      "ingest_kind": "note",
+      "text": "Earlier JWT diagnosis was wrong. The actual bug is SameSite=strict cookies plus iframe rendering — Safari ITP rejects the cookie on cross-site context. Replaces the JWT race theory."
+    },
+    {
+      "key": "auth_pr_event",
+      "at": "2026-04-15T16:45:00+00:00",
+      "session": "irl",
+      "ingest_kind": "event",
+      "text": "Pushed PR #438 fixing SameSite=lax fallback for the auth cookie. CI green, requesting Anya for review."
+    },
+    {
+      "key": "auth_retro_doc",
+      "at": "2026-04-17T10:00:00+00:00",
+      "session": "irl",
+      "ingest_kind": "file",
+      "text": "Auth incident retrospective. Root cause: SameSite=strict introduced 2026-03-22, Safari ITP enforcement landed 2026-04-08, iframe-embedded login finally tipped it over. Action items: add cross-browser smoke for cookie attrs; update auth runbook; keep SameSite=lax for the auth cookie until iframe usage drops to zero.",
+      "filename": "auth_incident_retro_2026Q2.md"
+    },
+    {
+      "key": "rakhi_pr_441",
+      "at": "2026-04-12T13:00:00+00:00",
+      "session": "irl",
+      "ingest_kind": "note",
+      "text": "Reviewed Rakhi's PR #441. She's introducing a single global mutex around the cache layer to fix the read-write race. Worried about throughput — every read now serializes."
+    },
+    {
+      "key": "rakhi_chat",
+      "at": "2026-04-13T15:30:00+00:00",
+      "session": "irl",
+      "ingest_kind": "note",
+      "text": "Talked with Rakhi about the cache locking. She agreed global mutex is too coarse. We sketched per-key locks; she's going to redo as PR #443."
+    },
+    {
+      "key": "pr_443_review",
+      "at": "2026-04-16T11:20:00+00:00",
+      "session": "irl",
+      "ingest_kind": "event",
+      "text": "Reviewed Rakhi's PR #443 (per-key cache locks). Approved with a comment asking for a stress-test in tests/cache_concurrency_test.py. Latency benchmarks attached look good — back to baseline at p99."
+    },
+    {
+      "key": "rakhi_merge",
+      "at": "2026-04-18T09:10:00+00:00",
+      "session": "irl",
+      "ingest_kind": "note",
+      "text": "Rakhi merged PR #443. Cache p99 back at 11ms (was 9ms before her changes, vs 86ms with the global mutex)."
+    },
+    {
+      "key": "rfc_clickhouse",
+      "at": "2026-04-08T14:00:00+00:00",
+      "session": "irl",
+      "ingest_kind": "file",
+      "text": "RFC: Move the event store from Postgres to ClickHouse. Motivation: analytical queries over events take 8-30s on the current setup. ClickHouse benchmarks show sub-second on the same volume. Estimated 3 weeks of work.",
+      "filename": "rfc_event_store_migration.md"
+    },
+    {
+      "key": "rfc_mira_pushback",
+      "at": "2026-04-11T10:00:00+00:00",
+      "session": "irl",
+      "ingest_kind": "note",
+      "text": "Mira pushed back on the ClickHouse RFC. Concern: the platform team can't take on another database to operate. Suggested we keep Postgres for transactional, add ClickHouse only for analytics-derived stream so existing oncall doesn't change."
+    },
+    {
+      "key": "rfc_compromise",
+      "at": "2026-04-14T16:30:00+00:00",
+      "session": "irl",
+      "ingest_kind": "note",
+      "text": "Compromise on the event store RFC: Postgres remains the source of truth for transactional events; we add ClickHouse as a downstream read-replica for analytics queries only. Mira agreed."
+    },
+    {
+      "key": "rfc_estimate_v2",
+      "at": "2026-04-15T09:00:00+00:00",
+      "session": "irl",
+      "ingest_kind": "note",
+      "text": "Updated event-store migration estimate after the Postgres+ClickHouse split: 6 weeks, not 3. Replaces the earlier 3-week number from the RFC."
+    },
+    {
+      "key": "rfc_decision",
+      "at": "2026-04-22T15:00:00+00:00",
+      "session": "irl",
+      "ingest_kind": "event",
+      "text": "Decision meeting on event store: Postgres + ClickHouse hybrid approved. Anya signed off. Start date 2026-05-04, target 6 weeks."
+    },
+    {
+      "key": "stripe_flake_v1",
+      "at": "2026-04-17T22:30:00+00:00",
+      "session": "irl",
+      "ingest_kind": "note",
+      "text": "Spent 3hrs on the flaky integration test test_payment_e2e.py. Fails ~1 in 4 runs in CI, never locally. Suspecting Stripe sandbox throttling but no docs say so."
+    },
+    {
+      "key": "stripe_flake_v2_diagnosis",
+      "at": "2026-04-18T19:45:00+00:00",
+      "session": "irl",
+      "ingest_kind": "note",
+      "text": "Confirmed: Stripe sandbox does throttle when the same test API key gets >30 requests/min. CI parallelism was triggering it. Switching to a mocked Stripe client for CI; sandbox stays for the nightly e2e."
+    },
+    {
+      "key": "stripe_mock_event",
+      "at": "2026-04-19T13:00:00+00:00",
+      "session": "irl",
+      "ingest_kind": "event",
+      "text": "Landed the Stripe mock for CI in PR #449. test_payment_e2e.py is green across 50 consecutive runs. Nightly job still hits real sandbox."
+    },
+    {
+      "key": "stripe_undocumented",
+      "at": "2026-04-19T13:30:00+00:00",
+      "session": "irl",
+      "ingest_kind": "note",
+      "text": "Note for future me: Stripe sandbox rate limits are NOT documented anywhere in their public docs. Filed a support ticket asking them to publish the threshold."
+    },
+    {
+      "key": "pref_pytest",
+      "at": "2026-04-05T08:00:00+00:00",
+      "session": "irl",
+      "ingest_kind": "note",
+      "text": "Preference: pytest-xdist for parallel runs, not pytest-parallel. xdist's worker model is more predictable, parallel reuses threads which masks GIL issues."
+    },
+    {
+      "key": "pref_ruff",
+      "at": "2026-04-06T08:30:00+00:00",
+      "session": "irl",
+      "ingest_kind": "note",
+      "text": "Black is fine but I'd rather have ruff for both linting and formatting. One tool, faster, fewer config files. Plan to migrate the repo when next quiet sprint comes."
+    },
+    {
+      "key": "pref_pr_words",
+      "at": "2026-04-07T10:00:00+00:00",
+      "session": "irl",
+      "ingest_kind": "note",
+      "text": "Don't write 'simple' or 'just' in PR descriptions, they hide complexity. If kayo sees them in a draft PR description, flag it."
+    },
+    {
+      "key": "pref_async_debug",
+      "at": "2026-04-09T19:00:00+00:00",
+      "session": "irl",
+      "ingest_kind": "note",
+      "text": "Heuristic: when debugging async code, check the event loop first. ~80% of weird async bugs in this codebase have been event-loop misuse (cross-thread awaits, hung tasks, lost futures)."
+    },
+    {
+      "key": "pref_uv_over_pip_tools",
+      "at": "2026-03-28T14:00:00+00:00",
+      "session": "irl",
+      "ingest_kind": "note",
+      "text": "Switched from pip-tools to uv last week. uv lockfile resolution is way faster (8s vs 90s on our deps). pip-tools is now retired in this repo."
+    },
+    {
+      "key": "random_cow_paper",
+      "at": "2026-04-20T20:00:00+00:00",
+      "session": "irl",
+      "ingest_kind": "url",
+      "text": "Reading: copy-on-write filesystems and their applicability to in-memory cache layers. The paper discusses ZFS-style snapshotting and how generational refcounting could apply to per-tenant data isolation. Reminds me of the cache work Rakhi just did, though that's a different problem (concurrency vs isolation).",
+      "filename": "cow_fs_for_cache_layers.html"
+    },
+    {
+      "key": "random_nix_mention",
+      "at": "2026-04-21T11:00:00+00:00",
+      "session": "irl",
+      "ingest_kind": "note",
+      "text": "Mira mentioned trying nix-shell for dev environments at the team lunch. Worth trying after the auth migration settles. Adds reproducibility but the learning curve is steep."
+    },
+    {
+      "key": "random_coffee",
+      "at": "2026-04-23T08:00:00+00:00",
+      "session": "irl",
+      "ingest_kind": "note",
+      "text": "Coffee log: the third-wave roasters in Bergen are underrated. Tim Wendelboe ships better than Blue Bottle and is half the price into Norway. Going back when I'm there in June."
+    },
+    {
+      "key": "manager_1on1",
+      "at": "2026-04-25T15:00:00+00:00",
+      "session": "irl",
+      "ingest_kind": "event",
+      "text": "1:1 with Anya. Covered the auth retro, the ClickHouse decision, and progression. She said the staff promo packet is on track for the August cycle. Asked me to mentor Diego on the new infra team."
+    },
+    {
+      "key": "diego_mentor_note",
+      "at": "2026-04-25T17:30:00+00:00",
+      "session": "irl",
+      "ingest_kind": "note",
+      "text": "Mentoring assignment: Diego on the infra team. He's two months in, came from a Java background. Plan: pair on a real bug first, then give him a P3 task."
+    },
+    {
+      "key": "diego_shadow_event",
+      "at": "2026-04-29T14:00:00+00:00",
+      "session": "irl",
+      "ingest_kind": "event",
+      "text": "Diego shadowed me debugging the SameSite/Safari ITP issue from the auth retro. He picked up the cookie attribute model fast. Asked good questions about why we kept the JWT race theory alive for two days before correcting it."
+    },
+    {
+      "key": "diego_assess",
+      "at": "2026-04-30T09:00:00+00:00",
+      "session": "irl",
+      "ingest_kind": "note",
+      "text": "Diego is sharp. Probably ready for a P3 task by next sprint. Thinking of giving him the cache-eviction policy tuning — small, isolated, has clear metrics."
+    },
+    {
+      "key": "kayo_skill_note",
+      "at": "2026-04-26T22:00:00+00:00",
+      "session": "irl",
+      "ingest_kind": "note",
+      "text": "Kayo skill drafting: when I ask 'what was that bug' don't just return the most recent matching note — surface the supersession chain. Auth bug is the canonical example: JWT theory, then Safari ITP correction. Both matter."
+    }
+  ],
+  "queries": [
+    {
+      "query": "what was that auth thing again?",
+      "query_type": "vague",
+      "kind": "indirect",
+      "expected_substrings": ["SameSite", "Safari", "iframe"]
+    },
+    {
+      "query": "the cookie bug — what was actually wrong with it?",
+      "query_type": "vague",
+      "kind": "indirect",
+      "expected_substrings": ["SameSite=strict", "Safari ITP"]
+    },
+    {
+      "query": "the bug we thought was JWT — what did it actually turn out to be?",
+      "query_type": "multihop_2",
+      "kind": "indirect",
+      "expected_substrings": ["SameSite", "Safari"]
+    },
+    {
+      "query": "wat did i fix on apr 15",
+      "query_type": "typo",
+      "kind": "direct",
+      "expected_substrings": ["SameSite", "PR #438", "auth"]
+    },
+    {
+      "query": "rakhi pr stuff",
+      "query_type": "casual",
+      "kind": "indirect",
+      "expected_substrings": ["per-key", "PR #443", "cache"]
+    },
+    {
+      "query": "what did Rakhi work on?",
+      "query_type": "multihop_2",
+      "kind": "indirect",
+      "expected_substrings": ["cache", "per-key", "lock"]
+    },
+    {
+      "query": "the throughput thing",
+      "query_type": "vague",
+      "kind": "indirect",
+      "expected_substrings": ["global mutex", "cache"]
+    },
+    {
+      "query": "what did Mira push back on?",
+      "query_type": "multihop_2",
+      "kind": "indirect",
+      "expected_substrings": ["ClickHouse", "another database", "platform team"]
+    },
+    {
+      "query": "Mira's compromise on the event store — when was the final decision made?",
+      "query_type": "multihop_3",
+      "kind": "indirect",
+      "expected_substrings": ["2026-04-22", "Postgres", "ClickHouse", "hybrid"]
+    },
+    {
+      "query": "after we switched off pip-tools, what package manager did I land on?",
+      "query_type": "multihop_2",
+      "kind": "indirect",
+      "expected_substrings": ["uv"]
+    },
+    {
+      "query": "the test framework I prefer for parallel runs",
+      "query_type": "vague",
+      "kind": "direct",
+      "expected_substrings": ["pytest-xdist"]
+    },
+    {
+      "query": "based on my preference for pytest-xdist, what would I likely think about pytest-parallel?",
+      "query_type": "multihop_4",
+      "kind": "indirect",
+      "expected_substrings": ["GIL", "thread", "predictable"]
+    },
+    {
+      "query": "the engineer I mentor was shadowing what bug?",
+      "query_type": "multihop_3",
+      "kind": "indirect",
+      "expected_substrings": ["SameSite", "Safari", "ITP"]
+    },
+    {
+      "query": "what was Mira working on the same week as the auth fix push?",
+      "query_type": "multihop_3",
+      "kind": "indirect",
+      "expected_substrings": ["estimate", "6 weeks", "Postgres", "ClickHouse"]
+    },
+    {
+      "query": "when I cancelled the ClickHouse migration, what was the alternative?",
+      "query_type": "wrong_premise",
+      "kind": "indirect",
+      "expected_substrings": ["did not cancel", "hybrid", "Postgres", "approved"]
+    },
+    {
+      "query": "what did Diego decide about the auth refactor?",
+      "query_type": "wrong_premise",
+      "kind": "indirect",
+      "expected_substrings": ["did not decide", "shadowed", "mentoring"]
+    },
+    {
+      "query": "the bug Stripe caused in production",
+      "query_type": "wrong_premise",
+      "kind": "indirect",
+      "expected_substrings": ["sandbox", "not production", "throttling"]
+    },
+    {
+      "query": "list everyone whose PR I reviewed in April and what each contained",
+      "query_type": "demanding",
+      "kind": "indirect",
+      "expected_substrings": ["Rakhi", "PR #441", "PR #443", "cache"]
+    },
+    {
+      "query": "summarize all the times Mira had input on architecture decisions",
+      "query_type": "demanding",
+      "kind": "indirect",
+      "expected_substrings": ["ClickHouse", "platform team", "compromise", "nix-shell"]
+    },
+    {
+      "query": "compare my opinion on ruff with my opinion on pytest-xdist",
+      "query_type": "demanding",
+      "kind": "indirect",
+      "expected_substrings": ["ruff", "pytest-xdist", "preference"]
+    },
+    {
+      "query": "what did I do last week?",
+      "query_type": "time_relative",
+      "kind": "indirect",
+      "expected_substrings": ["Diego", "shadow"]
+    },
+    {
+      "query": "the day before Diego started shadowing",
+      "query_type": "time_relative",
+      "kind": "indirect",
+      "expected_substrings": ["2026-04-28"]
+    },
+    {
+      "query": "favorite coffee in bergen?",
+      "query_type": "out_of_blue",
+      "kind": "direct",
+      "expected_substrings": ["Tim Wendelboe", "third-wave"]
+    },
+    {
+      "query": "who do I report to?",
+      "query_type": "out_of_blue",
+      "kind": "indirect",
+      "expected_substrings": ["Anya"]
+    },
+    {
+      "query": "PR 441 status",
+      "query_type": "partial_id",
+      "kind": "direct",
+      "expected_substrings": ["redid as PR #443", "global mutex", "per-key"]
+    },
+    {
+      "query": "test_payment_e2e issue resolution",
+      "query_type": "partial_id",
+      "kind": "direct",
+      "expected_substrings": ["Stripe", "mock", "throttling", "PR #449"]
+    },
+    {
+      "query": "what should kayo flag in PR descriptions?",
+      "query_type": "casual",
+      "kind": "direct",
+      "expected_substrings": ["simple", "just"]
+    },
+    {
+      "query": "what's my heuristic for async bugs?",
+      "query_type": "casual",
+      "kind": "direct",
+      "expected_substrings": ["event loop", "80%"]
+    },
+    {
+      "query": "what did Tom say about the kubernetes upgrade?",
+      "query_type": "negative",
+      "kind": "direct",
+      "expect_empty": true
+    },
+    {
+      "query": "the budget cut decision",
+      "query_type": "negative",
+      "kind": "direct",
+      "expect_empty": true
+    },
+    {
+      "query": "when did the security team last meet with us?",
+      "query_type": "negative",
+      "kind": "direct",
+      "expect_empty": true
+    },
+    {
+      "query": "the Datadog migration plan",
+      "query_type": "negative",
+      "kind": "direct",
+      "expect_empty": true
+    },
+    {
+      "query": "is the auth fix related to the ClickHouse decision?",
+      "query_type": "wrong_premise",
+      "kind": "indirect",
+      "expected_substrings": ["unrelated", "different", "no"]
+    },
+    {
+      "query": "the rfc that took 6 weeks instead of 3",
+      "query_type": "vague",
+      "kind": "indirect",
+      "expected_substrings": ["event store", "Postgres", "ClickHouse"]
+    },
+    {
+      "query": "diego ready for what kind of task",
+      "query_type": "casual",
+      "kind": "direct",
+      "expected_substrings": ["P3", "cache-eviction"]
+    },
+    {
+      "query": "anything about copy-on-write?",
+      "query_type": "casual",
+      "kind": "direct",
+      "expected_substrings": ["filesystem", "snapshot", "ZFS"]
+    },
+    {
+      "query": "the latency number after rakhi merged her cache fix",
+      "query_type": "multihop_2",
+      "kind": "indirect",
+      "expected_substrings": ["11ms", "p99"]
+    },
+    {
+      "query": "give me everything related to the auth incident: bug, diagnosis, fix, retro, and what Diego learned from it",
+      "query_type": "demanding",
+      "kind": "indirect",
+      "expected_substrings": ["SameSite", "Safari", "PR #438", "retro", "Diego", "shadowed"]
+    }
+  ],
+  "supersedes": [
+    ["auth_v2_jwt", "auth_v3_correction"]
+  ]
+}

@@ -108,6 +108,11 @@ SUITE_SPECS = {
         "loader": "load_regression_eval_fixture",
         "label": "RetrievalRegressionEvalSuite",
     },
+    "irl": {
+        "module": "tests.irl_eval_fixture",
+        "loader": "load_irl_eval_fixture",
+        "label": "IRLAgentEvaluationSuite",
+    },
 }
 
 
