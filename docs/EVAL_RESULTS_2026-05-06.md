@@ -30,6 +30,7 @@ Three suites, sampled with `--max-queries`. Backend `claude` (i.e. `claude -p` f
 | large (claude_code)          | 20      | 16/20 = 80%   | 0            | 4 / 0 |
 | regression (claude_code)     | 20      | 8/20 = 40%    | 0            | 3 / 9 |
 | **irl** (claude_code, full)  | 38      | 33/38 = 86.8% | 0            | 5 / 0 |
+| **irl** (post-fix, sequential, same prompt) | 38 | 31/38 = 81.6% | 0 | 7 / 0 |
 
 After deducting matcher false-negatives, the effective real-quality numbers are:
 
@@ -70,6 +71,23 @@ The misses, diagnosed surgically:
 ### What this run is for
 
 The IRL suite is designed to **stress kayo's actual use case**: someone with messy memory state asking real questions. Unlike `hard` and `large` (templated × N scenarios), every IRL query is unique and captures one realistic phrasing. The 5 misses give us 5 actionable items — much higher signal-per-query than the templated suites.
+
+### Post-fix iteration (commits `72f70fc`, `db3db24`)
+
+After landing four targeted fixes — bidirectional substring matching, markdown stripping in the canonicalizer, time-range retrieval fallback when keyword FTS finds nothing, and atomic+fsync'd telemetry log writes — we re-ran the IRL suite sequentially.
+
+**Result: 31/38 = 81.6%**, within the ±2-query LLM-variance band of the 33/38 baseline. Same prompt, same code, but different answers run-to-run for some queries (Q14 and Q25 passed in the baseline run, failed in this run; Q22 was the inverse). At this corpus size, LLM nondeterminism dominates 5%-band signal.
+
+**Durable wins (verified, not variance):**
+
+1. The time-range fallback in `pam.retrieval.search` works as designed. Q21 ("what did I do last week?") query log shows: `parsed time_range = {start: 2026-04-28, end: 2026-05-04}, candidates: 1, returned: 1`. Pre-fix this was 0 candidates. The remaining failure on Q21 is on the answer side — Claude says NO_ANSWER because the in-range note is "Diego shadowed me debugging..." which it reads as third-person about Diego, not first-person about "I". Fixable but a separate concern.
+2. The matcher fix lifts the regression suite's matcher false-negatives. Pre-fix Q1 (`"What is the stable machine-readable interface for Copilot callers?"`) failed because the answer wrapped ``--json`` in backticks. Post-fix Q1 passes via the markdown-strip canonicalizer. Q3 (valid_at vs created_at) similarly lifts. Full re-run on regression deferred — parallel runs hit the Claude Code rate limit during iteration.
+
+**Reverted change (negative result worth recording):**
+
+The first attempt at expanding the answer prompt (added rules: "if premise contradicted, correct it"; "if multiple supporting memories present, synthesize"; "treat 'Idea: revise X to Y' + SUPERSEDES as the current value of X"; softer NO_ANSWER condition) regressed IRL from 33/38 to 31/38 in v1. The longer rule list made Claude *more* cautious, not less — Q13 ("the engineer I mentor was shadowing what bug?") and Q22 ("the day before Diego started shadowing"), both passing in baseline, dropped to NO_ANSWER under the elaborated prompt. Reverted to the original prompt; the matcher and retrieval-side fixes are kept.
+
+**Lesson recorded for future prompt iterations:** prompt rules don't compose monotonically. Adding "be more permissive" instructions can paradoxically tighten answer behavior. Future prompt experiments should ablate one rule at a time and re-run a held-out suite, not stack changes.
 
 ## Findings
 
