@@ -314,17 +314,7 @@ def _prompt_for_answer(raw_query: str, retrieved_context: str) -> str:
         "- Do not inspect fixture files, source corpora, or test code.\n"
         "- Do not ask clarifying questions. You already have the full question.\n"
         "- Base the final answer only on the PAM retrieval result below.\n"
-        "- If the question's premise is contradicted by the retrieved memories"
-        " (e.g. it asserts something happened that the memories show did not),"
-        " briefly state the correction grounded in the retrieved facts.\n"
-        "- If multiple retrieved memories are individually relevant to the question,"
-        " synthesize across them rather than refusing — listing or summarizing them"
-        " is a valid answer.\n"
-        "- When a memory titled 'Idea: revise X to Y' or similar is connected"
-        " by a SUPERSEDES path, treat Y as the current value of X.\n"
-        "- Only reply NO_ANSWER if the retrieval result truly contains no facts"
-        " bearing on the question — not when it contains relevant facts that"
-        " merely contradict the question's framing.\n"
+        "- If the retrieval result does not support an answer, reply exactly with NO_ANSWER.\n"
         "- Output only the final answer text.\n\n"
         "PAM retrieval context:\n"
         f"{retrieved_context}"
@@ -430,6 +420,10 @@ def _normalize_answer_text(answer: str) -> str:
 
 def _canonicalize_match_text(text: str) -> str:
     canonical = _normalize_answer_text(text).lower()
+    # Strip inline markdown emphasis that LLM answers tend to wrap around code
+    # tokens (`--json`, `valid_at`) and bold key terms (**source**). These are
+    # presentation, not content, but they break naive substring matching.
+    canonical = canonical.replace("`", "").replace("**", "").replace("__", "")
     canonical = re.sub(r"(\d)\s+([a-z%]+)\b", r"\1\2", canonical)
     return canonical
 

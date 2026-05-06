@@ -296,6 +296,17 @@ class CopilotCliEvalHarnessTests(unittest.TestCase):
         case = {"expected_substrings": ["the Reykjavik annex"]}
         self.assertFalse(eval_module._answer_passes("blue cheese", case))
 
+    def test_answer_passes_strips_inline_backticks_in_answers(self) -> None:
+        """LLM answers wrap code tokens in backticks; expected substrings don't."""
+        case = {"expected_substrings": ["The --json flag is the stable interface"]}
+        # Same content, but the answer wraps `--json` in backticks.
+        self.assertTrue(eval_module._answer_passes("The `--json` flag is the stable interface", case))
+
+    def test_answer_passes_strips_bold_emphasis_in_answers(self) -> None:
+        """LLM answers bold key terms; expected substrings rarely do."""
+        case = {"expected_substrings": ["File ingestion defaults to source nodes"]}
+        self.assertTrue(eval_module._answer_passes("File ingestion defaults to **source** nodes", case))
+
     def test_eval_paths_recreates_only_requested_suite_directory(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_root = Path(temp_dir)
