@@ -28,6 +28,7 @@ class RetrievalResult:
     ordered_nodes: list[Node] = field(default_factory=list)
     relationships: list[Edge] = field(default_factory=list)
     graph_explanations: list["GraphExplanation"] = field(default_factory=list)
+    score_components: dict[str, dict[str, float]] = field(default_factory=dict)
 
 
 @dataclass
@@ -54,7 +55,11 @@ def days_since(dt, now) -> float:
     return max((now - dt).total_seconds() / 86400.0, 0.0)
 
 
-def score(node: Node, fts_rank: float | None, entity_boost: bool, now) -> float:
+def score(node: Node, fts_rank: float | None, entity_boost: bool, now) -> tuple[float, dict[str, float]]:
+    """Return (total, components). Components are post-weight contributions
+    that sum to total exactly under the same float arithmetic, so callers
+    can attribute a node's rank to specific signals without re-deriving
+    weights."""
     if fts_rank is not None:
         text_relevance = abs(fts_rank) / (1.0 + abs(fts_rank))
     else:
@@ -64,12 +69,19 @@ def score(node: Node, fts_rank: float | None, entity_boost: bool, now) -> float:
     importance = node.importance
     entity_bonus = ENTITY_BOOST_SCORE if entity_boost else 0.0
 
-    return (
-        WEIGHT_TEXT_RELEVANCE * text_relevance
-        + WEIGHT_RECENCY * recency
-        + WEIGHT_IMPORTANCE * importance
-        + entity_bonus
+    components = {
+        "text_relevance": WEIGHT_TEXT_RELEVANCE * text_relevance,
+        "recency": WEIGHT_RECENCY * recency,
+        "importance": WEIGHT_IMPORTANCE * importance,
+        "entity_bonus": entity_bonus,
+    }
+    total = (
+        components["text_relevance"]
+        + components["recency"]
+        + components["importance"]
+        + components["entity_bonus"]
     )
+    return total, components
 
 
 def _edge_matches_requested_direction(edge: Edge, anchor_ids: set[str], relation_direction: str | None) -> bool:
@@ -614,10 +626,12 @@ def rank_and_assemble(
     for node in expanded.nodes:
         combined.setdefault(node.id, (node, None))
 
-    node_scores = {
-        node.id: score(node, fts_rank, node.id in expanded.entity_boosted_ids, now)
-        for node, fts_rank in combined.values()
-    }
+    node_scores: dict[str, float] = {}
+    score_components: dict[str, dict[str, float]] = {}
+    for node, fts_rank in combined.values():
+        total, components = score(node, fts_rank, node.id in expanded.entity_boosted_ids, now)
+        node_scores[node.id] = total
+        score_components[node.id] = components
     scored_items = [(node, node_scores[node.id]) for node, _ in combined.values()]
     scored_items.sort(key=lambda item: item[1], reverse=True)
 
@@ -695,6 +709,7 @@ def rank_and_assemble(
         ordered_nodes=top_nodes,
         relationships=relationships,
         graph_explanations=graph_explanations,
+        score_components={node.id: score_components[node.id] for node in top_nodes},
     )
 
 

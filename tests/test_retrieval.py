@@ -685,19 +685,27 @@ class RetrievalModuleTests(unittest.TestCase):
         )
 
         with mock.patch("pam.retrieval.ranker.utcnow", return_value=fixed_now):
-            value = score(node, -2.0, True, fixed_now)
+            value, components = score(node, -2.0, True, fixed_now)
 
         expected_text = abs(-2.0) / (1.0 + abs(-2.0))
         expected_recency = math.exp(-0.01 * 5)
         expected = 0.45 * expected_text + 0.30 * expected_recency + 0.25 * 0.8 + 0.2
         self.assertAlmostEqual(value, expected)
+        self.assertEqual(
+            value,
+            components["text_relevance"]
+            + components["recency"]
+            + components["importance"]
+            + components["entity_bonus"],
+        )
+        self.assertEqual(components["entity_bonus"], 0.2)
 
     def test_ranking_prefers_more_negative_fts_rank(self) -> None:
         fixed_now = datetime(2026, 4, 22, tzinfo=timezone.utc)
         node = make_node(title="Comparable", valid_at=fixed_now, importance=0.5)
 
-        better = score(node, -10.0, False, fixed_now)
-        worse = score(node, -1.0, False, fixed_now)
+        better, _ = score(node, -10.0, False, fixed_now)
+        worse, _ = score(node, -1.0, False, fixed_now)
 
         self.assertGreater(better, worse)
 
@@ -724,6 +732,51 @@ class RetrievalModuleTests(unittest.TestCase):
         self.assertEqual(result.session_groups, {"s-1": [first_id, second_id]})
         self.assertEqual(get_node(self.conn, first_id).access_count, 1)
         self.assertEqual(get_node(self.conn, second_id).access_count, 1)
+
+    def test_ranker_exposes_score_components_per_surfaced_node(self) -> None:
+        note_id = create_node(self.conn, make_node(title="Scored note", node_type="note", importance=0.6))
+        graph_only_id = create_node(self.conn, make_node(title="Graph only note", node_type="note", importance=0.4))
+
+        scored = get_node(self.conn, note_id)
+        graph_only = get_node(self.conn, graph_only_id)
+        assert scored is not None and graph_only is not None
+
+        with mock.patch("pam.retrieval.ranker.utcnow", return_value=datetime(2026, 4, 22, tzinfo=timezone.utc)):
+            result = rank_and_assemble(
+                self.conn,
+                [(scored, -4.0)],
+                ExpandedResult(nodes=[graph_only], edge_facts={}, entity_boosted_ids={note_id}),
+                ParsedQuery(keywords=["note"], entities=[], time_range=None, intent="lookup"),
+                top_k=2,
+            )
+
+        self.assertEqual(set(result.score_components), {n.id for n in result.ordered_nodes})
+        for node in result.ordered_nodes:
+            components = result.score_components[node.id]
+            self.assertEqual(
+                set(components),
+                {"text_relevance", "recency", "importance", "entity_bonus"},
+            )
+            total, _ = score(
+                node,
+                -4.0 if node.id == note_id else None,
+                node.id == note_id,
+                datetime(2026, 4, 22, tzinfo=timezone.utc),
+            )
+            self.assertEqual(
+                total,
+                components["text_relevance"]
+                + components["recency"]
+                + components["importance"]
+                + components["entity_bonus"],
+            )
+
+        scored_components = result.score_components[note_id]
+        graph_components = result.score_components[graph_only_id]
+        self.assertGreater(scored_components["text_relevance"], 0.0)
+        self.assertEqual(graph_components["text_relevance"], 0.0)
+        self.assertGreater(scored_components["entity_bonus"], 0.0)
+        self.assertEqual(graph_components["entity_bonus"], 0.0)
 
     def test_ranker_surfaces_first_class_relationship_hits(self) -> None:
         note_id = create_node(self.conn, make_node(title="Query plan note", node_type="note"))
