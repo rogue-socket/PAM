@@ -58,4 +58,23 @@ Q11 is a real retrieval/answer issue tied to `"Which memory mentions X?"` query 
 
 ## Status
 
-Diagnosis only. No code changes this session. Resume from Option C when ready.
+Diagnosis only. No matcher code changes — see methodology decision below.
+
+## Methodology (decided 2026-05-07)
+
+The matcher stays as-is. It is treated as a **triage filter**, not the source of truth on quality.
+
+- Run the eval → matcher emits a coarse score.
+- A human (or Claude in-session) reads the misses and reclassifies the false-negatives.
+- The published score is `matcher_hits + confirmed_correct_misses`.
+
+**Why:** chasing the matcher's surface-form failures (filler prefixes, plurals, punctuation, terse answers) adds rules without removing the underlying brittleness. Manual triage is fast (<1 min for 20 queries), more honest, and avoids baking arbitrary stop-word lists / morphology rules into the eval harness.
+
+**Cost:** the eval cannot be graded unattended. Acceptable since this eval is run interactively, not in CI.
+
+### Today's regression score under this methodology
+
+- Matcher hits: 11
+- Confirmed-correct misses (manual triage): 8 (Q2, Q3, Q4, Q6, Q9, Q10, Q14, Q16)
+- Real miss: 1 (Q11 — `"Which memory mentions auditability?"` returns the memory title `"Local-First Sync Boundaries"` rather than a content phrase containing "auditability"; this is a `"Which memory mentions X?"` schema issue, not a retrieval bug)
+- **Real score: 19/20 = 95%**
