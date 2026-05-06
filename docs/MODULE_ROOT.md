@@ -19,7 +19,6 @@ For the updated documentation stance, one point matters: the current constant se
 
 - `TOP_K`
 - `FTS_CANDIDATE_LIMIT`
-- `MAX_GRAPH_DEPTH`
 - `ENTITY_BOOST_SCORE`
 - `EDGE_WEIGHT_EXPANSION_THRESHOLD`
 
