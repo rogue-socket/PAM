@@ -510,7 +510,7 @@ def _invoke_llm(raw_query: str, today: date) -> str:
 
         client = Anthropic(timeout=LLM_TIMEOUT_SECONDS)
         response = client.messages.create(
-            model=os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-latest"),
+            model=os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5"),
             max_tokens=300,
             temperature=0,
             messages=[{"role": "user", "content": prompt}],

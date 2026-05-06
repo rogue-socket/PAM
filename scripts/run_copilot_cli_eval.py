@@ -10,12 +10,12 @@ import subprocess
 import sys
 from contextlib import ExitStack
 from datetime import datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PYTHON_EXE = ROOT / ".venv" / "Scripts" / "python.exe"
 CLI_PATH = ROOT / "cli.py"
 TEMP_ROOT = ROOT / ".tmp_manual_cli" / "copilot_cli_eval"
 
@@ -23,34 +23,68 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 
-def _find_copilot_command_prefix() -> list[str]:
-    appdata = Path(os.getenv("APPDATA", ""))
-    npm_loader = appdata / "npm" / "node_modules" / "@github" / "copilot" / "npm-loader.js"
-    node_exe = shutil.which("node")
-    if node_exe and npm_loader.exists():
-        return [node_exe, str(npm_loader)]
+BACKENDS = ("copilot", "claude")
+DEFAULT_BACKEND = "claude"
+DEFAULT_MODEL_BY_BACKEND = {
+    "copilot": "claude-sonnet-4.5",
+    "claude": "claude-sonnet-4-5",
+}
 
-    candidates = [
-        shutil.which("copilot.cmd"),
-        shutil.which("copilot"),
-        str(appdata / "npm" / "copilot.cmd"),
-        str(
-            appdata
-            / "Code"
-            / "User"
-            / "globalStorage"
-            / "github.copilot-chat"
-            / "copilotCli"
-            / "copilot.bat"
-        ),
-    ]
-    for candidate in candidates:
-        if candidate and Path(candidate).exists():
-            return [candidate]
+
+def _find_copilot_command_prefix() -> tuple[str, ...]:
+    """Locate the GitHub Copilot CLI executable across platforms.
+
+    macOS / Linux first via PATH; Windows-specific lookups gated by
+    sys.platform. Raises FileNotFoundError if no candidate exists.
+    """
+    on_path = shutil.which("copilot")
+    if on_path:
+        return (on_path,)
+
+    if sys.platform == "win32":
+        appdata = Path(os.getenv("APPDATA", ""))
+        npm_loader = appdata / "npm" / "node_modules" / "@github" / "copilot" / "npm-loader.js"
+        node_exe = shutil.which("node")
+        if node_exe and npm_loader.exists():
+            return (node_exe, str(npm_loader))
+
+        candidates = (
+            shutil.which("copilot.cmd"),
+            str(appdata / "npm" / "copilot.cmd"),
+            str(
+                appdata
+                / "Code"
+                / "User"
+                / "globalStorage"
+                / "github.copilot-chat"
+                / "copilotCli"
+                / "copilot.bat"
+            ),
+        )
+        for candidate in candidates:
+            if candidate and Path(candidate).exists():
+                return (candidate,)
+
     raise FileNotFoundError("Could not locate the GitHub Copilot CLI executable")
 
 
-COPILOT_COMMAND_PREFIX = _find_copilot_command_prefix()
+@lru_cache(maxsize=1)
+def _get_copilot_command_prefix() -> tuple[str, ...]:
+    """Cached, lazy resolver for the Copilot CLI command prefix."""
+    return _find_copilot_command_prefix()
+
+
+def _find_claude_command_prefix() -> tuple[str, ...]:
+    """Locate the Claude Code CLI executable. Same contract as Copilot."""
+    on_path = shutil.which("claude")
+    if on_path:
+        return (on_path,)
+    raise FileNotFoundError("Could not locate the Claude Code CLI executable (`claude`)")
+
+
+@lru_cache(maxsize=1)
+def _get_claude_command_prefix() -> tuple[str, ...]:
+    return _find_claude_command_prefix()
 
 
 SUITE_SPECS = {
@@ -74,16 +108,33 @@ SUITE_SPECS = {
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Evaluate PAM through the GitHub Copilot CLI using a real Copilot model.",
+        description="Evaluate PAM end-to-end via a real LLM backend (Copilot CLI or Claude Code CLI).",
     )
     parser.add_argument("--suite", choices=sorted(SUITE_SPECS), required=True)
-    parser.add_argument("--model", default="claude-opus-4.6")
+    parser.add_argument(
+        "--backend",
+        choices=BACKENDS,
+        default=DEFAULT_BACKEND,
+        help=f"Which CLI backend to grade against. Default: {DEFAULT_BACKEND}.",
+    )
+    parser.add_argument(
+        "--model",
+        default=None,
+        help="Model ID to pass to the backend. Default depends on backend.",
+    )
     parser.add_argument("--top-k", type=int, default=10)
     parser.add_argument("--max-queries", type=int, default=None)
-    parser.add_argument("--batch-size", type=int, default=None,
-                        help="Print a batch summary to stderr every N queries. Runs all at once if omitted.")
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=None,
+        help="Print a batch summary to stderr every N queries. Runs all at once if omitted.",
+    )
     parser.add_argument("--include-misses", action="store_true")
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.model is None:
+        args.model = DEFAULT_MODEL_BY_BACKEND[args.backend]
+    return args
 
 
 def _load_fixture(suite_name: str) -> tuple[dict, str]:
@@ -264,7 +315,7 @@ def _run_copilot_query(raw_query: str, *, model: str, top_k: int, db_path: Path,
     retrieved_context = _retrieve_context(raw_query, top_k=top_k)
 
     command = [
-        *COPILOT_COMMAND_PREFIX,
+        *_get_copilot_command_prefix(),
         "-p",
         _prompt_for_answer(raw_query, retrieved_context),
         "--model",
@@ -294,6 +345,60 @@ def _run_copilot_query(raw_query: str, *, model: str, top_k: int, db_path: Path,
     if completed.returncode != 0:
         raise RuntimeError(stderr or stdout or f"copilot exited with code {completed.returncode}")
     return stdout
+
+
+def _run_claude_query(raw_query: str, *, model: str, top_k: int, db_path: Path, log_path: Path) -> str:
+    """Eval via Claude Code CLI (`claude -p`).
+
+    Same retrieval + prompt as Copilot; only the binary and the flag set
+    differ. Output format is plain text so the answer-pass matcher works
+    unchanged.
+    """
+    retrieved_context = _retrieve_context(raw_query, top_k=top_k)
+
+    command = [
+        *_get_claude_command_prefix(),
+        "-p",
+        _prompt_for_answer(raw_query, retrieved_context),
+        "--model",
+        model,
+        "--output-format",
+        "text",
+    ]
+
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=ROOT,
+            env=os.environ.copy(),
+            capture_output=True,
+            timeout=300,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(f"claude query timed out after 300s: {raw_query}") from exc
+
+    stdout = completed.stdout.decode("utf-8", errors="replace").strip()
+    stderr = completed.stderr.decode("utf-8", errors="replace").strip()
+    if completed.returncode != 0:
+        raise RuntimeError(stderr or stdout or f"claude exited with code {completed.returncode}")
+    return stdout
+
+
+def _run_backend_query(
+    backend: str,
+    raw_query: str,
+    *,
+    model: str,
+    top_k: int,
+    db_path: Path,
+    log_path: Path,
+) -> str:
+    if backend == "copilot":
+        return _run_copilot_query(raw_query, model=model, top_k=top_k, db_path=db_path, log_path=log_path)
+    if backend == "claude":
+        return _run_claude_query(raw_query, model=model, top_k=top_k, db_path=db_path, log_path=log_path)
+    raise ValueError(f"unknown backend: {backend!r}")
 
 
 def _normalize_answer_text(answer: str) -> str:
@@ -342,6 +447,7 @@ def _batch_summary(summary: dict, batch_label: str) -> dict:
 def _evaluate_queries(
     fixture: dict,
     *,
+    backend: str = "copilot",
     model: str,
     top_k: int,
     db_path: Path,
@@ -363,7 +469,10 @@ def _evaluate_queries(
         query_cases = query_cases[:max_queries]
 
     total_queries = len(query_cases)
-    _log(f"[eval] starting {total_queries} queries with model={model}, batch_size={batch_size or total_queries}")
+    _log(
+        f"[eval] starting {total_queries} queries via backend={backend} model={model} "
+        f"batch_size={batch_size or total_queries}"
+    )
 
     for index, query_case in enumerate(query_cases, start=1):
         query_type = query_case["query_type"]
@@ -377,7 +486,8 @@ def _evaluate_queries(
 
         error_message = None
         try:
-            answer = _run_copilot_query(
+            answer = _run_backend_query(
+                backend,
                 query_case["query"],
                 model=model,
                 top_k=top_k,
@@ -441,6 +551,7 @@ def main() -> int:
     _log(f"[eval] ingestion complete. starting evaluation.")
     summary = _evaluate_queries(
         fixture,
+        backend=args.backend,
         model=args.model,
         top_k=args.top_k,
         db_path=db_path,
@@ -451,6 +562,7 @@ def main() -> int:
 
     payload = {
         "suite": label,
+        "backend": args.backend,
         "model": args.model,
         "db_path": str(db_path),
         "log_path": str(log_path),

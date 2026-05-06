@@ -88,7 +88,7 @@ def _call_llm(prompt: str) -> str:
 
         client = Anthropic(timeout=LLM_TIMEOUT_SECONDS)
         response = client.messages.create(
-            model=os.getenv("ANTHROPIC_MODEL", "claude-3-5-haiku-latest"),
+            model=os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5"),
             max_tokens=400,
             temperature=0,
             messages=[{"role": "user", "content": prompt}],

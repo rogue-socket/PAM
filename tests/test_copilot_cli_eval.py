@@ -24,11 +24,18 @@ eval_module = importlib.import_module("scripts.run_copilot_cli_eval")
 class CopilotCliEvalHarnessTests(unittest.TestCase):
     def setUp(self) -> None:
         eval_module._get_copilot_command_prefix.cache_clear()
+        eval_module._get_claude_command_prefix.cache_clear()
 
     def tearDown(self) -> None:
         eval_module._get_copilot_command_prefix.cache_clear()
+        eval_module._get_claude_command_prefix.cache_clear()
 
-    def test_find_copilot_command_prefix_prefers_node_loader_when_present(self) -> None:
+    def test_find_copilot_command_prefix_prefers_path_when_available(self) -> None:
+        with mock.patch.object(eval_module.shutil, "which", return_value="/usr/local/bin/copilot"):
+            command_prefix = eval_module._find_copilot_command_prefix()
+        self.assertEqual(command_prefix, ("/usr/local/bin/copilot",))
+
+    def test_find_copilot_command_prefix_prefers_node_loader_on_windows(self) -> None:
         appdata = r"C:\Users\tester\AppData\Roaming"
         expected_loader = str(Path(appdata) / "npm" / "node_modules" / "@github" / "copilot" / "npm-loader.js")
 
@@ -40,23 +47,47 @@ class CopilotCliEvalHarnessTests(unittest.TestCase):
         def fake_exists(path_self: Path) -> bool:
             return str(path_self) == expected_loader
 
-        with mock.patch.dict(os.environ, {"APPDATA": appdata}, clear=False), mock.patch.object(
+        with mock.patch.object(eval_module.sys, "platform", "win32"), mock.patch.dict(
+            os.environ, {"APPDATA": appdata}, clear=False
+        ), mock.patch.object(
             eval_module.shutil,
             "which",
             side_effect=fake_which,
         ), mock.patch.object(eval_module.Path, "exists", autospec=True, side_effect=fake_exists):
             command_prefix = eval_module._find_copilot_command_prefix()
 
-        self.assertEqual(command_prefix, [r"C:\Program Files\nodejs\node.exe", expected_loader])
+        self.assertEqual(command_prefix, (r"C:\Program Files\nodejs\node.exe", expected_loader))
 
     def test_find_copilot_command_prefix_raises_when_no_candidate_exists(self) -> None:
-        with mock.patch.dict(os.environ, {"APPDATA": r"C:\Users\tester\AppData\Roaming"}, clear=False), mock.patch.object(
+        with mock.patch.object(eval_module.sys, "platform", "win32"), mock.patch.dict(
+            os.environ, {"APPDATA": r"C:\Users\tester\AppData\Roaming"}, clear=False
+        ), mock.patch.object(
             eval_module.shutil,
             "which",
             return_value=None,
         ), mock.patch.object(eval_module.Path, "exists", autospec=True, return_value=False):
             with self.assertRaises(FileNotFoundError):
                 eval_module._find_copilot_command_prefix()
+
+    def test_find_copilot_command_prefix_skips_windows_paths_off_windows(self) -> None:
+        """On non-Windows, missing PATH-resolved copilot should fail fast — no APPDATA fallback."""
+        with mock.patch.object(eval_module.sys, "platform", "darwin"), mock.patch.object(
+            eval_module.shutil,
+            "which",
+            return_value=None,
+        ):
+            with self.assertRaises(FileNotFoundError):
+                eval_module._find_copilot_command_prefix()
+
+    def test_find_claude_command_prefix_uses_path(self) -> None:
+        with mock.patch.object(eval_module.shutil, "which", return_value="/usr/local/bin/claude"):
+            command_prefix = eval_module._find_claude_command_prefix()
+        self.assertEqual(command_prefix, ("/usr/local/bin/claude",))
+
+    def test_find_claude_command_prefix_raises_when_missing(self) -> None:
+        with mock.patch.object(eval_module.shutil, "which", return_value=None):
+            with self.assertRaises(FileNotFoundError):
+                eval_module._find_claude_command_prefix()
 
     def test_run_copilot_query_builds_command_and_returns_stdout(self) -> None:
         completed = subprocess.CompletedProcess(
@@ -73,7 +104,7 @@ class CopilotCliEvalHarnessTests(unittest.TestCase):
         ), mock.patch.object(eval_module.subprocess, "run", return_value=completed) as run_mock:
             answer = eval_module._run_copilot_query(
                 "When is the launch now?",
-                model="gpt-5.4",
+                model="claude-sonnet-4.5",
                 top_k=5,
                 db_path=Path("pam-test.db"),
                 log_path=Path("pam-test.jsonl"),
@@ -85,7 +116,7 @@ class CopilotCliEvalHarnessTests(unittest.TestCase):
         run_command = run_mock.call_args.args[0]
         self.assertEqual(run_command[0], "copilot.cmd")
         self.assertIn("--model", run_command)
-        self.assertIn("gpt-5.4", run_command)
+        self.assertIn("claude-sonnet-4.5", run_command)
         self.assertIn("When is the launch now?", run_command[2])
         self.assertIn("Retrieved PAM results:\n- launch note", run_command[2])
         self.assertEqual(run_kwargs["cwd"], eval_module.ROOT)
@@ -106,11 +137,124 @@ class CopilotCliEvalHarnessTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "timed out"):
                 eval_module._run_copilot_query(
                     "When is the launch now?",
-                    model="gpt-5.4",
+                    model="claude-sonnet-4.5",
                     top_k=5,
                     db_path=Path("pam-test.db"),
                     log_path=Path("pam-test.jsonl"),
                 )
+
+    def test_run_claude_query_builds_command_and_returns_stdout(self) -> None:
+        completed = subprocess.CompletedProcess(
+            args=["claude"],
+            returncode=0,
+            stdout=b"Launch moved to 2026-05-01\n",
+            stderr=b"",
+        )
+
+        with mock.patch.object(
+            eval_module, "_retrieve_context", return_value="Retrieved PAM results:\n- launch note"
+        ) as retrieve_mock, mock.patch.object(
+            eval_module, "_get_claude_command_prefix", return_value=("/usr/local/bin/claude",)
+        ), mock.patch.object(eval_module.subprocess, "run", return_value=completed) as run_mock:
+            answer = eval_module._run_claude_query(
+                "When is the launch now?",
+                model="claude-sonnet-4-5",
+                top_k=5,
+                db_path=Path("pam-test.db"),
+                log_path=Path("pam-test.jsonl"),
+            )
+
+        self.assertEqual(answer, "Launch moved to 2026-05-01")
+        retrieve_mock.assert_called_once_with("When is the launch now?", top_k=5)
+        run_command = run_mock.call_args.args[0]
+        self.assertEqual(run_command[0], "/usr/local/bin/claude")
+        self.assertIn("-p", run_command)
+        self.assertIn("--model", run_command)
+        self.assertIn("claude-sonnet-4-5", run_command)
+        self.assertIn("--output-format", run_command)
+        self.assertIn("text", run_command)
+        # Claude CLI must NOT receive Copilot-only flags
+        self.assertNotIn("--no-ask-user", run_command)
+        self.assertNotIn("--stream", run_command)
+
+    def test_run_claude_query_raises_on_timeout(self) -> None:
+        with mock.patch.object(
+            eval_module, "_retrieve_context", return_value="Retrieved PAM results"
+        ), mock.patch.object(
+            eval_module, "_get_claude_command_prefix", return_value=("claude",)
+        ), mock.patch.object(
+            eval_module.subprocess,
+            "run",
+            side_effect=subprocess.TimeoutExpired(cmd=["claude"], timeout=300),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "timed out"):
+                eval_module._run_claude_query(
+                    "Q?",
+                    model="claude-sonnet-4-5",
+                    top_k=5,
+                    db_path=Path("pam-test.db"),
+                    log_path=Path("pam-test.jsonl"),
+                )
+
+    def test_run_backend_query_dispatches(self) -> None:
+        with mock.patch.object(eval_module, "_run_copilot_query", return_value="copilot answer") as copilot_mock, mock.patch.object(
+            eval_module, "_run_claude_query", return_value="claude answer"
+        ) as claude_mock:
+            self.assertEqual(
+                eval_module._run_backend_query(
+                    "copilot",
+                    "Q?",
+                    model="m",
+                    top_k=1,
+                    db_path=Path("p"),
+                    log_path=Path("l"),
+                ),
+                "copilot answer",
+            )
+            self.assertEqual(
+                eval_module._run_backend_query(
+                    "claude",
+                    "Q?",
+                    model="m",
+                    top_k=1,
+                    db_path=Path("p"),
+                    log_path=Path("l"),
+                ),
+                "claude answer",
+            )
+        copilot_mock.assert_called_once()
+        claude_mock.assert_called_once()
+
+    def test_run_backend_query_rejects_unknown_backend(self) -> None:
+        with self.assertRaises(ValueError):
+            eval_module._run_backend_query(
+                "openai",
+                "Q?",
+                model="m",
+                top_k=1,
+                db_path=Path("p"),
+                log_path=Path("l"),
+            )
+
+    def test_parse_args_default_model_depends_on_backend(self) -> None:
+        with mock.patch.object(eval_module.sys, "argv", ["prog", "--suite", "detailed", "--backend", "claude"]):
+            args = eval_module._parse_args()
+        self.assertEqual(args.backend, "claude")
+        self.assertEqual(args.model, eval_module.DEFAULT_MODEL_BY_BACKEND["claude"])
+
+        with mock.patch.object(eval_module.sys, "argv", ["prog", "--suite", "detailed", "--backend", "copilot"]):
+            args = eval_module._parse_args()
+        self.assertEqual(args.backend, "copilot")
+        self.assertEqual(args.model, eval_module.DEFAULT_MODEL_BY_BACKEND["copilot"])
+
+    def test_parse_args_explicit_model_overrides_default(self) -> None:
+        with mock.patch.object(
+            eval_module.sys,
+            "argv",
+            ["prog", "--suite", "detailed", "--backend", "claude", "--model", "claude-opus-4-7"],
+        ):
+            args = eval_module._parse_args()
+        self.assertEqual(args.model, "claude-opus-4-7")
 
     def test_eval_paths_recreates_only_requested_suite_directory(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -136,7 +280,8 @@ class CopilotCliEvalHarnessTests(unittest.TestCase):
     def test_main_sets_env_and_truncates_misses_by_default(self) -> None:
         args = argparse.Namespace(
             suite="large",
-            model="gpt-5.4",
+            backend="copilot",
+            model="claude-sonnet-4.5",
             top_k=7,
             max_queries=5,
             batch_size=2,
@@ -177,7 +322,8 @@ class CopilotCliEvalHarnessTests(unittest.TestCase):
 
         payload = json.loads(stdout.getvalue())
         self.assertEqual(payload["suite"], "LargeAgentEvaluationSuiteTests")
-        self.assertEqual(payload["model"], "gpt-5.4")
+        self.assertEqual(payload["backend"], "copilot")
+        self.assertEqual(payload["model"], "claude-sonnet-4.5")
         self.assertEqual(len(payload["summary"]["misses"]), 10)
         self.assertEqual(payload["summary"]["misses"][0]["index"], 0)
         self.assertEqual(payload["summary"]["misses"][-1]["index"], 9)

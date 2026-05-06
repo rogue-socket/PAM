@@ -13,4 +13,5 @@ pam_log.jsonl
 !.tmp_manual_cli/
 !.tmp_manual_cli/detailed_memory_eval/
 .tmp_manual_cli/detailed_memory_eval/**
-!.tmp_manual_cli/detailed_memory_eval/run_detailed_eval.py
+!.tmp_manual_cli/detailed_memory_eval/run_detailed_eval.pypam.egg-info/
+.tmp_manual_cli/copilot_cli_eval/
