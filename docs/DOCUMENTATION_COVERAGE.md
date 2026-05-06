@@ -93,6 +93,7 @@ The docs set now distinguishes current baseline behavior from intended graph-nat
 | `docs/TESTING.md` | Documentation | `docs/README.md` | Covered |
 | `docs/EVAL_SUITES.md` | Documentation (eval-suite cheat sheet) | `docs/README.md` | Covered |
 | `docs/EVAL_RESULTS_2026-05-06.md` | Documentation (dated eval run) | `docs/README.md` | Covered |
+| `docs/EVAL_REGRESSION_RERUN_2026-05-07.md` | Documentation (dated eval re-run + matcher diagnosis) | `docs/README.md` | Covered |
 | `docs/AUDIT_2026-05-06.md` | Documentation (dated audit) | `docs/README.md` | Covered |
 | `docs/EXPLORATORY_EVALUATION.md` | Documentation | `docs/README.md` | Covered |
 | `docs/RETRIEVAL_RELATIONS_PLAN.md` | Documentation | `docs/README.md` | Covered |
