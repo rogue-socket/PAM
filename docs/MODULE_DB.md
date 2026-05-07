@@ -42,7 +42,7 @@ The live package export surface is defined in `pam/db/__init__.py` and re-export
 1. creates `schema_version` and applies pending migrations
 2. runs compatibility repair for existing databases, including adding and backfilling `workspace_id` when needed
 
-`check_database_health()` is a storage-level consistency check for the `nodes` table and the standalone FTS index.
+`check_database_health()` is a storage-level consistency check for the `nodes` table and the standalone FTS index. `get_initialized_connection()` invokes it lazily — once per process per resolved DB path (cached in `_HEALTH_CHECKED_PATHS`) — and logs a `WARNING` via the `pam.db.schema` logger when drift is detected (missing or orphaned FTS rows). The check never raises, so callers that handle their own connections (for example, the eval suites) can still call `check_database_health()` directly when they need to assert health rather than just observe it.
 
 ### 2.2 `nodes.py`
 

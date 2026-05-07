@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -7,11 +8,20 @@ from pathlib import Path
 from config import DB_PATH
 
 
+logger = logging.getLogger(__name__)
+
+
 CONNECTION_PRAGMAS = (
     "PRAGMA journal_mode = WAL",
     "PRAGMA foreign_keys = ON",
     "PRAGMA busy_timeout = 5000",
 )
+
+
+# Per-process set of DB paths whose health has already been checked. Keyed by
+# resolved path so different relative forms hit the same entry. Cleared by
+# tests via _HEALTH_CHECKED_PATHS.clear().
+_HEALTH_CHECKED_PATHS: set[str] = set()
 
 
 def utcnow() -> datetime:
@@ -57,7 +67,30 @@ def get_connection(db_path: Path | str | None = None) -> sqlite3.Connection:
 def get_initialized_connection(db_path: Path | str | None = None) -> sqlite3.Connection:
     conn = get_connection(db_path)
     initialize(conn)
+    _check_health_once(conn, db_path)
     return conn
+
+
+def _check_health_once(conn: sqlite3.Connection, db_path: Path | str | None) -> None:
+    """Run check_database_health once per process per DB path. Warns on drift."""
+    target = db_path or DB_PATH
+    key = str(Path(str(target)).resolve())
+    if key in _HEALTH_CHECKED_PATHS:
+        return
+    _HEALTH_CHECKED_PATHS.add(key)
+    try:
+        report = check_database_health(conn)
+    except sqlite3.Error as exc:
+        logger.warning("check_database_health failed for %s: %s", key, exc)
+        return
+    if not report["is_healthy"]:
+        logger.warning(
+            "FTS drift detected for %s: missing_fts_rows=%s orphaned_fts_rows=%s nodes_count=%s",
+            key,
+            report["missing_fts_rows"],
+            report["orphaned_fts_rows"],
+            report["nodes_count"],
+        )
 
 
 def resolve_workspace_id(workspace_id: Path | str | None = None) -> str:

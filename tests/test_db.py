@@ -1,13 +1,18 @@
 from __future__ import annotations
 
+import logging
 import sqlite3
+import tempfile
 import unittest
 from datetime import datetime, timezone
+from pathlib import Path
+from unittest import mock
 
 from pam.db.edges import Edge, create_edge, get_edges_between, get_edges_from, get_edges_to, update_edge_weight
 from pam.db.fts import fts_search
 from pam.db.nodes import Node, bulk_update_importance, create_node, delete_node, find_by_content_hash, get_node, increment_access_count, list_nodes, update_importance, update_node
-from pam.db.schema import get_connection, get_current_version, initialize
+from pam.db import schema as schema_module
+from pam.db.schema import get_connection, get_current_version, get_initialized_connection, initialize
 
 
 def make_node(
@@ -245,6 +250,74 @@ class DatabaseModuleTests(unittest.TestCase):
     def test_foreign_keys_are_enforced_for_edges(self) -> None:
         with self.assertRaises(sqlite3.IntegrityError):
             create_edge(self.conn, make_edge("missing-source", "missing-target"))
+
+
+class HealthCheckOnInitTests(unittest.TestCase):
+    """O2: get_initialized_connection runs check_database_health once per process per path."""
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.db_path = Path(self._tmp.name) / "pam.db"
+        schema_module._HEALTH_CHECKED_PATHS.clear()
+
+    def tearDown(self) -> None:
+        schema_module._HEALTH_CHECKED_PATHS.clear()
+        self._tmp.cleanup()
+
+    def test_runs_health_check_on_first_connection(self) -> None:
+        with mock.patch.object(
+            schema_module, "check_database_health", wraps=schema_module.check_database_health
+        ) as health_mock:
+            conn = get_initialized_connection(self.db_path)
+        conn.close()
+        self.assertEqual(health_mock.call_count, 1)
+
+    def test_skips_health_check_on_subsequent_connections_to_same_path(self) -> None:
+        with mock.patch.object(
+            schema_module, "check_database_health", wraps=schema_module.check_database_health
+        ) as health_mock:
+            get_initialized_connection(self.db_path).close()
+            get_initialized_connection(self.db_path).close()
+            get_initialized_connection(self.db_path).close()
+        self.assertEqual(health_mock.call_count, 1)
+
+    def test_runs_health_check_again_for_a_different_path(self) -> None:
+        other_path = Path(self._tmp.name) / "other.db"
+        with mock.patch.object(
+            schema_module, "check_database_health", wraps=schema_module.check_database_health
+        ) as health_mock:
+            get_initialized_connection(self.db_path).close()
+            get_initialized_connection(other_path).close()
+        self.assertEqual(health_mock.call_count, 2)
+
+    def test_logs_warning_when_health_check_reports_drift(self) -> None:
+        unhealthy = {
+            "is_healthy": False,
+            "nodes_count": 12,
+            "missing_fts_rows": 3,
+            "orphaned_fts_rows": 0,
+        }
+        with mock.patch.object(schema_module, "check_database_health", return_value=unhealthy):
+            with self.assertLogs("pam.db.schema", level="WARNING") as captured:
+                get_initialized_connection(self.db_path).close()
+        self.assertTrue(any("FTS drift detected" in line for line in captured.output))
+
+    def test_silent_when_healthy(self) -> None:
+        with mock.patch.object(
+            schema_module, "check_database_health", wraps=schema_module.check_database_health
+        ):
+            logger = logging.getLogger("pam.db.schema")
+            old_level = logger.level
+            logger.setLevel(logging.WARNING)
+            try:
+                with self.assertLogs("pam.db.schema", level="WARNING") as captured:
+                    get_initialized_connection(self.db_path).close()
+                    logger.warning("sentinel")
+            finally:
+                logger.setLevel(old_level)
+        # Only the sentinel should appear; no FTS drift warning.
+        self.assertEqual(len(captured.output), 1)
+        self.assertIn("sentinel", captured.output[0])
 
 
 if __name__ == "__main__":
