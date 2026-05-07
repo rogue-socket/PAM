@@ -135,6 +135,12 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--top-k", type=int, default=10)
     parser.add_argument("--max-queries", type=int, default=None)
     parser.add_argument(
+        "--start-from",
+        type=int,
+        default=1,
+        help="1-based query index to start at. Useful for resuming after a rate-limit truncation.",
+    )
+    parser.add_argument(
         "--batch-size",
         type=int,
         default=None,
@@ -491,6 +497,7 @@ def _evaluate_queries(
     log_path: Path,
     max_queries: int | None,
     batch_size: int | None,
+    start_from: int = 1,
 ) -> dict:
     summary = {
         "overall_hits": 0,
@@ -501,17 +508,20 @@ def _evaluate_queries(
         "misses": [],
     }
 
-    query_cases = fixture["queries"]
+    all_queries = fixture["queries"]
     if max_queries is not None:
-        query_cases = query_cases[:max_queries]
+        all_queries = all_queries[:max_queries]
+    start_index = max(1, start_from)
+    query_cases = all_queries[start_index - 1 :]
 
-    total_queries = len(query_cases)
+    total_queries = len(all_queries)
     _log(
-        f"[eval] starting {total_queries} queries via backend={backend} model={model} "
-        f"batch_size={batch_size or total_queries}"
+        f"[eval] starting {len(query_cases)} queries (indices {start_index}..{total_queries}) "
+        f"via backend={backend} model={model} batch_size={batch_size or len(query_cases)}"
     )
 
-    for index, query_case in enumerate(query_cases, start=1):
+    for offset, query_case in enumerate(query_cases):
+        index = start_index + offset
         query_type = query_case["query_type"]
         summary["query_type_totals"].setdefault(query_type, 0)
         summary["query_type_hits"].setdefault(query_type, 0)
@@ -595,6 +605,7 @@ def main() -> int:
         log_path=log_path,
         max_queries=args.max_queries,
         batch_size=args.batch_size,
+        start_from=args.start_from,
     )
 
     payload = {

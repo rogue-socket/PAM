@@ -337,6 +337,7 @@ class CopilotCliEvalHarnessTests(unittest.TestCase):
             max_queries=5,
             batch_size=2,
             include_misses=False,
+            start_from=1,
         )
         eval_root = Path("tmp-eval")
         db_path = eval_root / "pam.db"
