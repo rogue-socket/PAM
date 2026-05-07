@@ -6,6 +6,8 @@ import os
 
 from config import (
     ENTITY_CATEGORIES,
+    LLM_CLAUDE_CODE_MODEL,
+    LLM_INGESTION_MODEL,
     LLM_PROVIDER,
     LLM_TIMEOUT_SECONDS,
     MAX_ENTITIES_PER_INGESTION,
@@ -85,7 +87,7 @@ def _call_llm(prompt: str) -> str:
 
         client = Anthropic(timeout=LLM_TIMEOUT_SECONDS)
         response = client.messages.create(
-            model=os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5"),
+            model=LLM_INGESTION_MODEL,
             max_tokens=400,
             temperature=0,
             messages=[{"role": "user", "content": prompt}],
@@ -109,7 +111,7 @@ def _call_llm(prompt: str) -> str:
     if provider == "claude_code":
         return call_claude_code(
             prompt,
-            model=os.getenv("CLAUDE_CODE_MODEL"),
+            model=LLM_CLAUDE_CODE_MODEL,
             timeout=LLM_TIMEOUT_SECONDS,
         )
 

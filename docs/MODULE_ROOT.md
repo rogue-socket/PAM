@@ -57,6 +57,10 @@ These are still intended to sum to `1.0` before the separate entity bonus is app
 
 - `LLM_PROVIDER`
 - `LLM_TIMEOUT_SECONDS`
+- `LLM_INGESTION_MODEL` — Anthropic model for ingest summary/entity extraction (default `claude-haiku-4-5`, env override `ANTHROPIC_MODEL`).
+- `LLM_QUERY_PARSER_MODEL` — Anthropic model for query parsing (default `claude-sonnet-4-5`, env override `ANTHROPIC_MODEL`).
+- `LLM_CLAUDE_CODE_MODEL` — model passed to the Claude Code CLI when `LLM_PROVIDER=claude_code` (default `claude-haiku-4-5`, env override `CLAUDE_CODE_MODEL`).
+- `CHAT_ANSWER_MODEL` — Copilot model for `chat_agent.answer_with_pam` (default `claude-sonnet-4.5`, env override `PAM_CHAT_ANSWER_MODEL`). Re-exported as `pam.chat_agent.DEFAULT_CHAT_MODEL`.
 
 ### What Config Is Still Missing For The Intended System
 

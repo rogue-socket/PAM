@@ -8,7 +8,12 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta, timezone
 from typing import Literal
 
-from config import LLM_PROVIDER, LLM_TIMEOUT_SECONDS
+from config import (
+    LLM_CLAUDE_CODE_MODEL,
+    LLM_PROVIDER,
+    LLM_QUERY_PARSER_MODEL,
+    LLM_TIMEOUT_SECONDS,
+)
 from pam.llm_clients import (
     LLMUnavailableError as _SharedLLMUnavailableError,
     call_claude_code,
@@ -518,7 +523,7 @@ def _invoke_llm(raw_query: str, today: date) -> str:
 
         client = Anthropic(timeout=LLM_TIMEOUT_SECONDS)
         response = client.messages.create(
-            model=os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5"),
+            model=LLM_QUERY_PARSER_MODEL,
             max_tokens=300,
             temperature=0,
             messages=[{"role": "user", "content": prompt}],
@@ -542,7 +547,7 @@ def _invoke_llm(raw_query: str, today: date) -> str:
     if provider == "claude_code":
         return call_claude_code(
             prompt,
-            model=os.getenv("CLAUDE_CODE_MODEL"),
+            model=LLM_CLAUDE_CODE_MODEL,
             timeout=LLM_TIMEOUT_SECONDS,
         )
 

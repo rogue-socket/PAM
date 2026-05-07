@@ -44,3 +44,11 @@ IMPORTANCE_DEFAULT = 0.5
 # Valid values: "anthropic", "openai", "claude_code".
 LLM_PROVIDER = os.getenv("PAM_LLM_PROVIDER", "anthropic")
 LLM_TIMEOUT_SECONDS = int(os.getenv("PAM_LLM_TIMEOUT_SECONDS", "30"))
+
+# Per-call-site model defaults. Ingestion uses haiku (cheap, summary/entity
+# extraction); query parsing uses sonnet (smarter intent parse); chat answer
+# uses sonnet via the Copilot CLI, which expects the dot-form ID.
+LLM_INGESTION_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5")
+LLM_QUERY_PARSER_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5")
+LLM_CLAUDE_CODE_MODEL = os.getenv("CLAUDE_CODE_MODEL", "claude-haiku-4-5")
+CHAT_ANSWER_MODEL = os.getenv("PAM_CHAT_ANSWER_MODEL", "claude-sonnet-4.5")

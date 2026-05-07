@@ -7,11 +7,12 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+from config import CHAT_ANSWER_MODEL
 from pam.agent_interface import format_for_context_window, query_for_agent
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_CHAT_MODEL = "claude-sonnet-4.5"
+DEFAULT_CHAT_MODEL = CHAT_ANSWER_MODEL
 
 
 class ChatAgentError(RuntimeError):
