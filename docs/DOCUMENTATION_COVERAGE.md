@@ -97,7 +97,14 @@ The docs set now distinguishes current baseline behavior from intended graph-nat
 | `docs/EVAL_REGRESSION_RERUN_2026-05-07.md` | Documentation (dated eval re-run + matcher diagnosis) | `docs/README.md` | Covered |
 | `docs/EVAL_RESULTS_2026-05-07.md` | Documentation (full 560-query eval run) | `docs/README.md` | Covered |
 | `docs/AUDIT_2026-05-06.md` | Documentation (dated audit) | `docs/README.md` | Covered |
-| `docs/BACKLOG.md` | Documentation (open work not on a current sprint) | `docs/README.md` | Covered |
+| `CLAUDE.md` | Agent-facing project briefing | `docs/README.md` | Covered |
+| `decisions.md` | Agent-facing durable decisions | `CLAUDE.md` § Agent-facing scaffolding | Covered |
+| `glossary.md` | Agent-facing project terms | `CLAUDE.md` § Agent-facing scaffolding | Covered |
+| `backlog.md` | Agent-facing durable open work | `CLAUDE.md` § Agent-facing scaffolding | Covered |
+| `audits/` | Point-in-time audit snapshots (mirrors of `docs/AUDIT_*.md`) | `CLAUDE.md` § Agent-facing scaffolding | Covered |
+| `test_findings/` | Point-in-time eval / test findings (mirrors of `docs/EVAL_*.md`) | `CLAUDE.md` § Agent-facing scaffolding | Covered |
+| `prds/` | Point-in-time proposal/spec snapshots | `CLAUDE.md` § Agent-facing scaffolding | Covered |
+| `misc/` | Worth-keeping notes that don't fit the other folders | `CLAUDE.md` § Agent-facing scaffolding | Covered |
 | `docs/EXPLORATORY_EVALUATION.md` | Documentation | `docs/README.md` | Covered |
 | `docs/RETRIEVAL_RELATIONS_PLAN.md` | Documentation | `docs/README.md` | Covered |
 | `docs/REPOSITORY_ARTIFACTS.md` | Documentation | `docs/README.md` | Covered |

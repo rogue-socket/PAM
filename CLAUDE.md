@@ -70,9 +70,24 @@ Top-level layout:
 
 ## Documentation
 
-`docs/` is the source of truth for design intent. Most relevant when changing behavior:
+PAM uses a two-tier doc layout: agent-facing scaffolding at the repo root for fast retrieval and update, plus deeper reference material in `docs/`.
+
+### Agent-facing scaffolding (read first)
+
+- `decisions.md` — durable judgment calls and methodology, with **Why:** rationale per entry. Includes deferrals (decisions *not* to do something).
+- `glossary.md` — PAM-specific terms (kayo, IRL suite, F3, Q14/Q21/Q24/Q25, claude_code provider, workspace_id, etc.).
+- `backlog.md` — open work items with definition-of-done. Distinct from session-level Unresolved.
+- `audits/` — dated audit snapshots. The 2026-05-06 audit is the canonical one; new audits go here as `YYYY-MM-DD_HH-MM-SS_<slug>.md`.
+- `test_findings/` — dated eval / test-run results. New eval reports go here.
+- `prds/` — point-in-time proposals (currently empty). Long-lived design plans stay in `docs/` instead — see decisions.md 2026-05-07.
+- `misc/` — worth-keeping notes that don't fit the four categories above.
+
+### `docs/` — design-intent reference (read when changing behavior)
 
 - `docs/ARCHITECTURE.md` — current vs. intended split, invariants, ranking model.
 - `docs/RETRIEVAL_RELATIONS_PLAN.md` — roadmap from relation-aware to graph-native retrieval.
+- `docs/DEPENDABILITY_PLAN.md` — dependability posture and gaps for the graph-native target.
 - `docs/MODULE_*.md` — per-module current behavior + what's missing.
+- `docs/EVAL_SUITES.md` — the five eval corpora and what a miss in each tells you.
+- `docs/TESTING.md` — how to run unit + eval suites.
 - `docs/DOCUMENTATION_COVERAGE.md` — file-to-doc mapping. When you add/rename/remove a maintained file, update the relevant module doc and this coverage matrix.
