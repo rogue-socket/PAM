@@ -136,4 +136,35 @@ def unwrap_json_response(text: str) -> str:
     return stripped
 
 
-__all__ = ["LLMUnavailableError", "call_claude_code", "unwrap_json_response"]
+def extract_anthropic_text(response) -> str:
+    """Concatenate text blocks from an Anthropic SDK Messages response."""
+    parts: list[str] = []
+    for block in getattr(response, "content", []) or []:
+        text = getattr(block, "text", None)
+        if text:
+            parts.append(text)
+    return "\n".join(parts).strip()
+
+
+def extract_openai_text(response) -> str:
+    """Concatenate text from an OpenAI Responses API response."""
+    output_text = getattr(response, "output_text", None)
+    if output_text:
+        return output_text.strip()
+
+    parts: list[str] = []
+    for item in getattr(response, "output", []) or []:
+        for content in getattr(item, "content", []) or []:
+            text = getattr(content, "text", None)
+            if text:
+                parts.append(text)
+    return "\n".join(parts).strip()
+
+
+__all__ = [
+    "LLMUnavailableError",
+    "call_claude_code",
+    "extract_anthropic_text",
+    "extract_openai_text",
+    "unwrap_json_response",
+]

@@ -16,7 +16,13 @@ import json
 import pam.ingestion.llm as ingestion_llm
 import pam.llm_clients as llm_clients
 import pam.retrieval.query_parser as query_parser
-from pam.llm_clients import LLMUnavailableError, call_claude_code, unwrap_json_response
+from pam.llm_clients import (
+    LLMUnavailableError,
+    call_claude_code,
+    extract_anthropic_text,
+    extract_openai_text,
+    unwrap_json_response,
+)
 
 
 class CallClaudeCodeTests(unittest.TestCase):
@@ -180,6 +186,35 @@ class UnwrapJsonResponseTests(unittest.TestCase):
 
     def test_handles_empty_string(self) -> None:
         self.assertEqual(unwrap_json_response(""), "")
+
+
+class ExtractAnthropicTextTests(unittest.TestCase):
+    def test_concatenates_text_blocks(self) -> None:
+        response = mock.Mock(content=[mock.Mock(text="hello "), mock.Mock(text="world")])
+        self.assertEqual(extract_anthropic_text(response), "hello \nworld")
+
+    def test_skips_blocks_with_no_text(self) -> None:
+        response = mock.Mock(content=[mock.Mock(text=None), mock.Mock(text="real")])
+        self.assertEqual(extract_anthropic_text(response), "real")
+
+    def test_returns_empty_when_content_missing(self) -> None:
+        response = mock.Mock(spec=[])
+        self.assertEqual(extract_anthropic_text(response), "")
+
+
+class ExtractOpenaiTextTests(unittest.TestCase):
+    def test_uses_output_text_when_present(self) -> None:
+        response = mock.Mock(output_text="  done  ")
+        self.assertEqual(extract_openai_text(response), "done")
+
+    def test_falls_back_to_nested_output_blocks(self) -> None:
+        nested = mock.Mock(content=[mock.Mock(text="nested-"), mock.Mock(text="text")])
+        response = mock.Mock(output_text=None, output=[nested])
+        self.assertEqual(extract_openai_text(response), "nested-\ntext")
+
+    def test_returns_empty_when_neither_field_present(self) -> None:
+        response = mock.Mock(output_text=None, output=[])
+        self.assertEqual(extract_openai_text(response), "")
 
 
 if __name__ == "__main__":

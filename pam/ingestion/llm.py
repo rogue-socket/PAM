@@ -12,7 +12,13 @@ from config import (
     LLM_TIMEOUT_SECONDS,
     MAX_ENTITIES_PER_INGESTION,
 )
-from pam.llm_clients import LLMUnavailableError, call_claude_code, unwrap_json_response
+from pam.llm_clients import (
+    LLMUnavailableError,
+    call_claude_code,
+    extract_anthropic_text,
+    extract_openai_text,
+    unwrap_json_response,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -43,29 +49,6 @@ Text: {content}
 """
 
 
-def _extract_anthropic_text(response) -> str:
-    parts: list[str] = []
-    for block in getattr(response, "content", []) or []:
-        text = getattr(block, "text", None)
-        if text:
-            parts.append(text)
-    return "\n".join(parts).strip()
-
-
-def _extract_openai_text(response) -> str:
-    output_text = getattr(response, "output_text", None)
-    if output_text:
-        return output_text.strip()
-
-    parts: list[str] = []
-    for item in getattr(response, "output", []) or []:
-        for content in getattr(item, "content", []) or []:
-            text = getattr(content, "text", None)
-            if text:
-                parts.append(text)
-    return "\n".join(parts).strip()
-
-
 def _safe_llm_text(prompt: str, warning_message: str, *warning_args: object) -> str | None:
     try:
         return _call_llm(prompt).strip()
@@ -92,7 +75,7 @@ def _call_llm(prompt: str) -> str:
             temperature=0,
             messages=[{"role": "user", "content": prompt}],
         )
-        return _extract_anthropic_text(response)
+        return extract_anthropic_text(response)
 
     if provider == "openai":
         try:
@@ -106,7 +89,7 @@ def _call_llm(prompt: str) -> str:
             input=prompt,
             temperature=0,
         )
-        return _extract_openai_text(response)
+        return extract_openai_text(response)
 
     if provider == "claude_code":
         return call_claude_code(

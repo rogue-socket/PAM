@@ -17,6 +17,8 @@ from config import (
 from pam.llm_clients import (
     LLMUnavailableError as _SharedLLMUnavailableError,
     call_claude_code,
+    extract_anthropic_text,
+    extract_openai_text,
     unwrap_json_response,
 )
 
@@ -488,29 +490,6 @@ def _configured_provider() -> str:
     return (LLM_PROVIDER or "").strip().lower()
 
 
-def _extract_anthropic_text(response) -> str:
-    parts: list[str] = []
-    for block in getattr(response, "content", []) or []:
-        text = getattr(block, "text", None)
-        if text:
-            parts.append(text)
-    return "\n".join(parts).strip()
-
-
-def _extract_openai_text(response) -> str:
-    output_text = getattr(response, "output_text", None)
-    if output_text:
-        return output_text.strip()
-
-    parts: list[str] = []
-    for item in getattr(response, "output", []) or []:
-        for content in getattr(item, "content", []) or []:
-            text = getattr(content, "text", None)
-            if text:
-                parts.append(text)
-    return "\n".join(parts).strip()
-
-
 def _invoke_llm(raw_query: str, today: date) -> str:
     prompt = _build_prompt(raw_query, today)
     provider = _configured_provider()
@@ -528,7 +507,7 @@ def _invoke_llm(raw_query: str, today: date) -> str:
             temperature=0,
             messages=[{"role": "user", "content": prompt}],
         )
-        return _extract_anthropic_text(response)
+        return extract_anthropic_text(response)
 
     if provider == "openai":
         try:
@@ -542,7 +521,7 @@ def _invoke_llm(raw_query: str, today: date) -> str:
             input=prompt,
             temperature=0,
         )
-        return _extract_openai_text(response)
+        return extract_openai_text(response)
 
     if provider == "claude_code":
         return call_claude_code(
