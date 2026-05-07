@@ -8,14 +8,15 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from config import IMPORTANCE_MIN, LOG_PATH, SESSION_STALENESS_HOURS, SUPERSEDE_IMPORTANCE_FACTOR
+from config import LOG_PATH, SESSION_STALENESS_HOURS
 from pam.db.edges import Edge, create_edge, get_edges_to
-from pam.db.nodes import Node, create_node, delete_node, get_node, list_nodes, update_importance, update_node
+from pam.db.nodes import Node, create_node, delete_node, get_node, list_nodes, update_node
 from pam.db.schema import datetime_to_iso, get_connection, initialize, utcnow
 from pam.ingestion.entity_linker import LinkEntitiesResult, link_entities_detailed
 from pam.ingestion.extract import extract, infer_node_type
 from pam.ingestion.llm import extract_entities, generate_edge_fact, summarize
 from pam.ingestion.normalize import normalize
+from pam.relations import apply_supersedes
 
 
 logger = logging.getLogger(__name__)
@@ -451,23 +452,13 @@ def _infer_explicit_cross_memory_relations(
         if superseded_target is None:
             return
 
-        created = create_edge(
+        apply_supersedes(
             conn,
-            Edge(
-                source_id=node_id,
-                target_id=superseded_target.id,
-                relation="SUPERSEDES",
-                weight=1.0,
-                fact=supersede_fact,
-                created_at=utcnow(),
-            ),
+            new_node_id=node_id,
+            old_node=superseded_target,
+            fact=supersede_fact,
+            source="ingest_cue",
         )
-        if not created:
-            return
-
-        new_importance = max(superseded_target.importance * SUPERSEDE_IMPORTANCE_FACTOR, IMPORTANCE_MIN)
-        update_importance(conn, superseded_target.id, new_importance)
-        update_node(conn, superseded_target.id, status="reference")
 
 
 def ingest(

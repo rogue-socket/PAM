@@ -15,6 +15,7 @@ The docs set now distinguishes current baseline behavior from intended graph-nat
 | `pam/chat_agent.py` | Source module | `docs/MODULE_CLI.md` | Covered |
 | `pam/feedback.py` | Source module | `docs/MODULE_LIFECYCLE.md` | Covered |
 | `pam/lifecycle.py` | Source module | `docs/MODULE_LIFECYCLE.md` | Covered |
+| `pam/relations.py` | Source module | `docs/MODULE_LIFECYCLE.md` | Covered |
 | `pam/llm_clients.py` | Source module | `docs/TESTING.md`, `docs/EVAL_SUITES.md` | Covered |
 | `pam/db/__init__.py` | Package file | `docs/MODULE_DB.md` | Covered |
 | `pam/db/schema.py` | Source module | `docs/MODULE_DB.md` | Covered |
@@ -94,6 +95,7 @@ The docs set now distinguishes current baseline behavior from intended graph-nat
 | `docs/EVAL_SUITES.md` | Documentation (eval-suite cheat sheet) | `docs/README.md` | Covered |
 | `docs/EVAL_RESULTS_2026-05-06.md` | Documentation (dated eval run) | `docs/README.md` | Covered |
 | `docs/EVAL_REGRESSION_RERUN_2026-05-07.md` | Documentation (dated eval re-run + matcher diagnosis) | `docs/README.md` | Covered |
+| `docs/EVAL_RESULTS_2026-05-07.md` | Documentation (full 560-query eval run) | `docs/README.md` | Covered |
 | `docs/AUDIT_2026-05-06.md` | Documentation (dated audit) | `docs/README.md` | Covered |
 | `docs/EXPLORATORY_EVALUATION.md` | Documentation | `docs/README.md` | Covered |
 | `docs/RETRIEVAL_RELATIONS_PLAN.md` | Documentation | `docs/README.md` | Covered |

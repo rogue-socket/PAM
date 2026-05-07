@@ -1,6 +1,6 @@
 # PAM Module: Lifecycle & Feedback
-### `pam/lifecycle.py`, `pam/feedback.py`
-> Owner: Agent 4 | Depends on: `pam.db`, `config.py` | Depended on by: `cli.py`
+### `pam/lifecycle.py`, `pam/feedback.py`, `pam/relations.py`
+> Owner: Agent 4 | Depends on: `pam.db`, `config.py` | Depended on by: `cli.py`, `pam.ingestion.pipeline`
 
 ---
 
@@ -58,10 +58,23 @@ Important current behavior:
 - `upvote()` increases node importance and optionally boosts traversed edges by `EDGE_UPVOTE_DELTA`
 - `downvote()` reduces node importance but does not auto-archive the node
 - `pin()` sets importance to `IMPORTANCE_MAX`
-- `supersede()` only allows node types listed in `SUPERSEDE_TYPES`, which is currently `{note, entity}`
-- `supersede()` always marks the old node as `reference`
-- `supersede()` only halves the old node's importance when a new `SUPERSEDES` edge was actually created
+- `supersede()` only allows node types listed in `SUPERSEDE_TYPES`, which is currently `{note, entity}`. The actual edge-write and node-state mutation are delegated to `pam.relations.apply_supersedes()` (see 2.3) so the same semantics apply whether the supersession comes from a user command or an ingest-time cue
 - all feedback operations append JSONL log entries
+
+### 2.3 `relations.py`
+
+Public exports:
+
+- `apply_supersedes(conn, *, new_node_id, old_node, fact, source)`
+
+Centralized side-effect logic for `SUPERSEDES`. Used by both `pam.feedback.supersede()` (with `source="user"`) and `pam.ingestion.pipeline._infer_explicit_cross_memory_relations` (with `source="ingest_cue"`). Behavior:
+
+- Always creates the edge (or no-op on duplicate by primary key).
+- Always sets `old_node.status = "reference"` — idempotent at the status level.
+- Dampens `old_node.importance` by `SUPERSEDE_IMPORTANCE_FACTOR` only on first creation, so replay does not multiply the dampening.
+- Always logs a `supersede` lifecycle event with `source` ∈ {"user", "ingest_cue"} and `edge_created` distinguishing first vs replay.
+
+This module exists to keep the supersession contract single-sourced — closes audit O3.
 
 ---
 

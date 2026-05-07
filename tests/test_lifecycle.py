@@ -6,8 +6,11 @@ from datetime import datetime, timedelta, timezone
 from math import exp
 from pathlib import Path
 
+import json
+
 import pam.feedback as feedback_module
 import pam.lifecycle as lifecycle_module
+import pam.relations as relations_module
 from config import ARCHIVE_THRESHOLD, DECAY_LAMBDA, IMPORTANCE_DEFAULT
 from pam.db.edges import Edge, create_edge, get_edges_from
 from pam.db.nodes import Node, create_node, get_node
@@ -71,12 +74,15 @@ class LifecycleModuleTests(unittest.TestCase):
         self.log_path = Path(self.temp_dir.name) / "pam_log.jsonl"
         self.original_lifecycle_log_path = lifecycle_module.LOG_PATH
         self.original_feedback_log_path = feedback_module.LOG_PATH
+        self.original_relations_log_path = relations_module.LOG_PATH
         lifecycle_module.LOG_PATH = self.log_path
         feedback_module.LOG_PATH = self.log_path
+        relations_module.LOG_PATH = self.log_path
 
     def tearDown(self) -> None:
         lifecycle_module.LOG_PATH = self.original_lifecycle_log_path
         feedback_module.LOG_PATH = self.original_feedback_log_path
+        relations_module.LOG_PATH = self.original_relations_log_path
         self.temp_dir.cleanup()
         self.conn.close()
 
@@ -266,6 +272,44 @@ class LifecycleModuleTests(unittest.TestCase):
         assert source_node is not None
         self.assertEqual(source_node.status, "active")
         self.assertEqual(source_node.importance, 0.5)
+
+    def test_supersede_replay_does_not_re_dampen_importance(self) -> None:
+        """O3: replaying supersede on the same pair must not multiply importance twice."""
+        old_id = create_node(self.conn, make_node(importance=0.6, title="Old"))
+        new_id = create_node(self.conn, make_node(importance=0.5, title="New"))
+
+        self.assertTrue(supersede(self.conn, new_id, old_id))
+        first_pass = get_node(self.conn, old_id)
+        assert first_pass is not None
+        self.assertAlmostEqual(first_pass.importance, 0.3)
+
+        # Replay: edge already exists. Importance must stay 0.3, not drop to 0.15.
+        self.assertTrue(supersede(self.conn, new_id, old_id))
+        second_pass = get_node(self.conn, old_id)
+        assert second_pass is not None
+        self.assertAlmostEqual(second_pass.importance, 0.3)
+        self.assertEqual(second_pass.status, "reference")
+        self.assertEqual(len(get_edges_from(self.conn, new_id, relation="SUPERSEDES")), 1)
+
+    def test_supersede_telemetry_records_source_and_edge_created(self) -> None:
+        """O3: log payload distinguishes user vs ingest_cue and first-vs-replay."""
+        old_id = create_node(self.conn, make_node(importance=0.6, title="Old"))
+        new_id = create_node(self.conn, make_node(importance=0.5, title="New"))
+
+        supersede(self.conn, new_id, old_id)
+        supersede(self.conn, new_id, old_id)
+
+        events = [
+            json.loads(line)
+            for line in self.log_path.read_text().splitlines()
+            if line.strip()
+        ]
+        supersede_events = [e for e in events if e.get("event") == "supersede"]
+        self.assertEqual(len(supersede_events), 2)
+        for evt in supersede_events:
+            self.assertEqual(evt["source"], "user")
+        self.assertTrue(supersede_events[0]["edge_created"])
+        self.assertFalse(supersede_events[1]["edge_created"])
 
 
 if __name__ == "__main__":

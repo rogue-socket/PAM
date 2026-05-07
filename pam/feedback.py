@@ -9,12 +9,12 @@ from config import (
     IMPORTANCE_MAX,
     IMPORTANCE_MIN,
     LOG_PATH,
-    SUPERSEDE_IMPORTANCE_FACTOR,
     UPVOTE_DELTA,
 )
-from pam.db.edges import Edge, create_edge, update_edge_weight
-from pam.db.nodes import Node, get_node, update_importance, update_node
-from pam.db.schema import utcnow, utcnow_iso
+from pam.db.edges import update_edge_weight
+from pam.db.nodes import Node, get_node, update_importance
+from pam.db.schema import utcnow_iso
+from pam.relations import apply_supersedes
 
 
 SUPERSEDE_TYPES = {"note", "entity"}
@@ -116,34 +116,12 @@ def supersede(conn: sqlite3.Connection, new_node_id: str, old_node_id: str) -> b
     if new_node.type not in SUPERSEDE_TYPES or old_node.type not in SUPERSEDE_TYPES:
         return False
 
-    created = create_edge(
+    apply_supersedes(
         conn,
-        Edge(
-            source_id=new_node_id,
-            target_id=old_node_id,
-            relation="SUPERSEDES",
-            weight=1.0,
-            fact="",
-            created_at=utcnow(),
-        ),
-    )
-
-    old_importance = old_node.importance
-    new_importance = old_importance
-    if created:
-        new_importance = max(old_importance * SUPERSEDE_IMPORTANCE_FACTOR, IMPORTANCE_MIN)
-        update_importance(conn, old_node_id, new_importance)
-
-    update_node(conn, old_node_id, status="reference")
-    _append_log(
-        {
-            "event": "supersede",
-            "new_node_id": new_node_id,
-            "old_node_id": old_node_id,
-            "old_importance": old_importance,
-            "new_importance": new_importance,
-            "edge_created": created,
-        }
+        new_node_id=new_node_id,
+        old_node=old_node,
+        fact="",
+        source="user",
     )
     return True
 
