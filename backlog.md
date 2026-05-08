@@ -8,18 +8,6 @@ When an item gets picked up, move it into a session doc or `audits/` / `test_fin
 
 ## Eval / quality
 
-### Expand the colloquial-relationship test corpus <!-- from: docs/BACKLOG.md -->
-**Why:** Q24 (`"who do I report to?"`) is the canonical example of a query class that the FTS-led baseline cannot answer — because the corpus uses *colloquial language* for the relationship (`"1:1 with Anya"`) instead of the keyword the user types (`"manager"`, `"report to"`). One example doesn't make a measurable suite. Before investing in semantic retrieval or write-time relation inference, we want enough Q24-shaped queries that we can measure whether a fix actually moves the number.
-
-**Suggested additions to `tests/fixtures/irl_eval_corpus.json`:**
-- `"1:1 with X"` → `"who's my manager?"` / `"who do I report to?"` / `"who's my skip-level?"`
-- `"coffee chat with X"` / `"grabbed lunch with X"` → `"do I know X well?"`
-- `"X assigned me to Y"` / `"X asked me to do Y"` → `"who's running Y?"` / `"what's my main project?"`
-- `"shipped Y for X's team"` → `"what team am I on?"`
-- `"X reviewed my PR"` → `"who reviews my code?"`
-
-**Definition of done:** at least 5 colloquial-relationship queries in the IRL fixture, with corresponding corpus items that contain the relationship indirectly. Each should fail today's FTS baseline (zero retrieval recall) so the eval clearly distinguishes baseline from any future fix.
-
 ### Q21 first-person framing in the answer prompt <!-- from: ~/.claude/sessions/PAM/2026-05-07.md -->
 **Why:** IRL miss `"what did I do last week?"` returns NO_ANSWER because Claude reads notes like `"Diego shadowed me debugging…"` as third-person. Retrieval is correct; this is an answer-prompt issue. Single-rule ablation.
 **How to apply:** add one prompt rule recognising first-person reflexive queries (`"what did I/we do…"`); test against IRL Q21 and the broader IRL set to verify no regression. Yesterday's lesson: prompt rules don't compose monotonically — verify with the full IRL suite, not just the target query.
@@ -46,7 +34,7 @@ These aren't either-or. Embeddings give recall on phrasing variation; cue rules 
 
 **What this needs before code:**
 - A short design doc (`prds/<date>_retrieval-hybrid-plan.md` or extend `docs/RETRIEVAL_RELATIONS_PLAN.md`) covering: embedding model + dimensions + storage (sqlite-vec? sqlite-vss? a sidecar?), how vector and FTS scores combine in the ranker, what cue patterns we trust enough to write edges from, how cue confidence flows into edge weight, and how the deterministic fallback contract holds when the embedding model is unavailable.
-- A measurable evaluation gate — the colloquial-relationship suite above is the natural baseline.
+- A measurable evaluation gate — the `colloquial_relationship` row in the IRL eval (5 queries, all 0/5 on today's FTS baseline) is the natural target.
 
 **Definition of done (planning step, not the build):** a design doc the team can argue with. Build is downstream of agreement.
 

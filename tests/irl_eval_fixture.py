@@ -18,6 +18,13 @@ Queries are intentionally messy:
 - `out_of_blue` — random topics that happen to be in the corpus
 - `partial_id` — PR number or filename mentioned without context
 - `negative` — out-of-fixture topics that should return NO_ANSWER
+- `colloquial_relationship` — role/relationship questions (manager, mentee,
+  reviewer, collaborator) where the corpus expresses the relationship in
+  colloquial language (`"1:1 with Anya"`, `"requesting Anya for review"`,
+  `"Mentoring assignment: Diego"`) instead of the keyword the user types.
+  Each query has zero FTS recall on the expected answer today; a future
+  hybrid retriever (embeddings + write-time cue rules) is the intended
+  unlock.
 
 Unlike the templated `hard` and `large` suites, every query here is
 hand-written and unique. The point is to expose how PAM behaves under

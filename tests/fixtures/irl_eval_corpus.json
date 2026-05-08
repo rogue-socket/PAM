@@ -307,6 +307,18 @@
       "expected_substrings": ["estimate", "6 weeks", "Postgres", "ClickHouse"]
     },
     {
+      "query": "what was the original timeline for the project Mira pushed back on?",
+      "query_type": "multihop_3",
+      "kind": "indirect",
+      "expected_substrings": ["3 weeks"]
+    },
+    {
+      "query": "did the engineer who pushed back on Postgres also have input on dev tooling?",
+      "query_type": "multihop_3",
+      "kind": "indirect",
+      "expected_substrings": ["nix-shell"]
+    },
+    {
       "query": "when I cancelled the ClickHouse migration, what was the alternative?",
       "query_type": "wrong_premise",
       "kind": "indirect",
@@ -323,6 +335,18 @@
       "query_type": "wrong_premise",
       "kind": "indirect",
       "expected_substrings": ["sandbox", "not production", "throttling"]
+    },
+    {
+      "query": "the database migration we shipped last week — how's it going?",
+      "query_type": "wrong_premise",
+      "kind": "indirect",
+      "expected_substrings": ["6 weeks", "approved", "Postgres", "ClickHouse"]
+    },
+    {
+      "query": "the cache fix Anya wrote — what was the approach?",
+      "query_type": "wrong_premise",
+      "kind": "indirect",
+      "expected_substrings": ["Rakhi", "per-key"]
     },
     {
       "query": "list everyone whose PR I reviewed in April and what each contained",
@@ -355,6 +379,12 @@
       "expected_substrings": ["2026-04-28"]
     },
     {
+      "query": "what was I working on two weeks ago?",
+      "query_type": "time_relative",
+      "kind": "indirect",
+      "expected_substrings": ["Anya"]
+    },
+    {
       "query": "favorite coffee in bergen?",
       "query_type": "out_of_blue",
       "kind": "direct",
@@ -362,7 +392,31 @@
     },
     {
       "query": "who do I report to?",
-      "query_type": "out_of_blue",
+      "query_type": "colloquial_relationship",
+      "kind": "indirect",
+      "expected_substrings": ["Anya"]
+    },
+    {
+      "query": "who's my manager?",
+      "query_type": "colloquial_relationship",
+      "kind": "indirect",
+      "expected_substrings": ["Anya"]
+    },
+    {
+      "query": "who am I coaching?",
+      "query_type": "colloquial_relationship",
+      "kind": "indirect",
+      "expected_substrings": ["Diego"]
+    },
+    {
+      "query": "who's my most frequent collaborator?",
+      "query_type": "colloquial_relationship",
+      "kind": "indirect",
+      "expected_substrings": ["Rakhi"]
+    },
+    {
+      "query": "who critiques my code?",
+      "query_type": "colloquial_relationship",
       "kind": "indirect",
       "expected_substrings": ["Anya"]
     },
