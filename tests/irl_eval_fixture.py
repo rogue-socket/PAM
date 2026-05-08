@@ -22,9 +22,24 @@ Queries are intentionally messy:
   reviewer, collaborator) where the corpus expresses the relationship in
   colloquial language (`"1:1 with Anya"`, `"requesting Anya for review"`,
   `"Mentoring assignment: Diego"`) instead of the keyword the user types.
-  Each query has zero FTS recall on the expected answer today; a future
-  hybrid retriever (embeddings + write-time cue rules) is the intended
-  unlock.
+  Each query has zero or near-zero FTS recall on the expected answer today;
+  a future hybrid retriever (embeddings + write-time cue rules) is the
+  intended unlock. Includes both directions — `"who's my manager"` and the
+  reverse-direction `"who reports to me"` (expects empty, since the user
+  has no direct reports in this corpus) — to catch retrievers that confuse
+  edge direction.
+- `paraphrase` — answer note uses different vocabulary than the question
+  (`"the lock granularity debate"` for notes about `"global mutex"` /
+  `"per-key locks"`). Tests semantic-recall headroom that FTS alone leaves
+  on the table.
+- `time_vague` — qualitative time references (`"last month"`,
+  `"earlier this spring"`, `"around easter time"`) rather than the
+  parser-friendly relative times in `time_relative`. Tests whether
+  retrieval can connect a fuzzy time framing to the right window of notes.
+- `entity_by_role` — note names the person, query asks by role
+  (`"the engineer who came from a Java background"` → Diego). Inverse of
+  the `colloquial_relationship` shape: the colloquial axis is on the
+  description-of-the-person, not the relationship-to-the-user.
 
 Unlike the templated `hard` and `large` suites, every query here is
 hand-written and unique. The point is to expose how PAM behaves under

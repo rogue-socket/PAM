@@ -107,6 +107,7 @@ The docs set now distinguishes current baseline behavior from intended graph-nat
 | `misc/` | Worth-keeping notes that don't fit the other folders | `CLAUDE.md` § Agent-facing scaffolding | Covered |
 | `docs/EXPLORATORY_EVALUATION.md` | Documentation | `docs/README.md` | Covered |
 | `docs/RETRIEVAL_RELATIONS_PLAN.md` | Documentation | `docs/README.md` | Covered |
+| `docs/HYBRID_RETRIEVAL_PLAN.md` | Documentation | `docs/README.md` | Covered |
 | `docs/REPOSITORY_ARTIFACTS.md` | Documentation | `docs/README.md` | Covered |
 | `docs/DEPENDABILITY_PLAN.md` | Documentation | `docs/README.md` | Covered |
 | `docs/DOCUMENTATION_COVERAGE.md` | Documentation | `docs/README.md` | Covered |

@@ -503,6 +503,132 @@
       "query_type": "demanding",
       "kind": "indirect",
       "expected_substrings": ["SameSite", "Safari", "PR #438", "retro", "Diego", "shadowed"]
+    },
+    {
+      "query": "who's my boss?",
+      "query_type": "colloquial_relationship",
+      "kind": "indirect",
+      "expected_substrings": ["Anya"]
+    },
+    {
+      "query": "who runs my 1:1s?",
+      "query_type": "colloquial_relationship",
+      "kind": "indirect",
+      "expected_substrings": ["Anya"]
+    },
+    {
+      "query": "who signs off on my decisions?",
+      "query_type": "colloquial_relationship",
+      "kind": "indirect",
+      "expected_substrings": ["Anya"]
+    },
+    {
+      "query": "who reviews my PRs?",
+      "query_type": "colloquial_relationship",
+      "kind": "indirect",
+      "expected_substrings": ["Anya"]
+    },
+    {
+      "query": "who am I mentoring?",
+      "query_type": "colloquial_relationship",
+      "kind": "indirect",
+      "expected_substrings": ["Diego"]
+    },
+    {
+      "query": "who's my mentee?",
+      "query_type": "colloquial_relationship",
+      "kind": "indirect",
+      "expected_substrings": ["Diego"]
+    },
+    {
+      "query": "the engineer I'm helping ramp up",
+      "query_type": "colloquial_relationship",
+      "kind": "indirect",
+      "expected_substrings": ["Diego"]
+    },
+    {
+      "query": "who do I work closely with?",
+      "query_type": "colloquial_relationship",
+      "kind": "indirect",
+      "expected_substrings": ["Rakhi"]
+    },
+    {
+      "query": "who do I pair with on code?",
+      "query_type": "colloquial_relationship",
+      "kind": "indirect",
+      "expected_substrings": ["Rakhi"]
+    },
+    {
+      "query": "who reports to me?",
+      "query_type": "colloquial_relationship",
+      "kind": "indirect",
+      "expect_empty": true
+    },
+    {
+      "query": "who's mentoring me?",
+      "query_type": "colloquial_relationship",
+      "kind": "indirect",
+      "expect_empty": true
+    },
+    {
+      "query": "what's the auth bug rooted in Apple's privacy crackdown?",
+      "query_type": "paraphrase",
+      "kind": "indirect",
+      "expected_substrings": ["SameSite", "Safari", "ITP"]
+    },
+    {
+      "query": "the lock granularity debate on the cache",
+      "query_type": "paraphrase",
+      "kind": "indirect",
+      "expected_substrings": ["per-key", "global mutex"]
+    },
+    {
+      "query": "did Mira like the new database plan?",
+      "query_type": "paraphrase",
+      "kind": "indirect",
+      "expected_substrings": ["agreed", "Postgres", "ClickHouse", "hybrid"]
+    },
+    {
+      "query": "my deps lockfile speed-up move",
+      "query_type": "paraphrase",
+      "kind": "indirect",
+      "expected_substrings": ["uv", "pip-tools"]
+    },
+    {
+      "query": "the auth thing from last month",
+      "query_type": "time_vague",
+      "kind": "indirect",
+      "expected_substrings": ["SameSite", "Safari"]
+    },
+    {
+      "query": "the architecture decision earlier this spring",
+      "query_type": "time_vague",
+      "kind": "indirect",
+      "expected_substrings": ["Postgres", "ClickHouse", "hybrid"]
+    },
+    {
+      "query": "what was the big bug I fixed around easter time?",
+      "query_type": "time_vague",
+      "kind": "indirect",
+      "expected_substrings": ["SameSite", "Safari"]
+    },
+    {
+      "query": "the person who pushed back on the database migration",
+      "query_type": "entity_by_role",
+      "kind": "indirect",
+      "expected_substrings": ["Mira"]
+    },
+    {
+      "query": "the engineer who came from a Java background",
+      "query_type": "entity_by_role",
+      "kind": "indirect",
+      "expected_substrings": ["Diego"]
+    },
+    {
+      "query": "the senior who signed off on the event store decision",
+      "query_type": "entity_by_role",
+      "kind": "indirect",
+      "expected_substrings": ["Anya"]
     }
   ],
   "supersedes": [

@@ -227,6 +227,8 @@ Expected outcome:
 
 Graph answers depend less on exact keyword overlap.
 
+Concrete proposal under this phase: see [`HYBRID_RETRIEVAL_PLAN.md`](./HYBRID_RETRIEVAL_PLAN.md), which specifies the embedding model, vector storage, score combination, and LLM-at-ingest typed-edge extraction targeting the IRL `colloquial_relationship` 0/5 baseline.
+
 ### Phase 4: Make Ranking And Output Explanation-Rich
 
 - score paths and clusters, not only nodes and explicit single edges

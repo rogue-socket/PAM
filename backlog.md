@@ -28,11 +28,13 @@ When an item gets picked up, move it into a session doc or `audits/` / `test_fin
 
 These aren't either-or. Embeddings give recall on phrasing variation; cue rules give precision on high-confidence patterns and let the graph stay queryable.
 
-**What this needs before code:**
-- A short design doc (`prds/<date>_retrieval-hybrid-plan.md` or extend `docs/RETRIEVAL_RELATIONS_PLAN.md`) covering: embedding model + dimensions + storage (sqlite-vec? sqlite-vss? a sidecar?), how vector and FTS scores combine in the ranker, what cue patterns we trust enough to write edges from, how cue confidence flows into edge weight, and how the deterministic fallback contract holds when the embedding model is unavailable.
-- A measurable evaluation gate — the `colloquial_relationship` row in the IRL eval (5 queries, **0/5 confirmed on 2026-05-08 full run**) is the natural target.
+**Status:** design doc landed at [`docs/HYBRID_RETRIEVAL_PLAN.md`](docs/HYBRID_RETRIEVAL_PLAN.md) (2026-05-08, revised same day). Specifies bge-small-en-v1.5 + sqlite-vec for embeddings (nodes *and* entity records in Phase A), LLM-at-ingest typed-edge extraction with controlled vocab (MANAGES/MENTORS/COLLABORATES_WITH), score-combination formula, deterministic fallback tiers, embedding lifecycle (synchronous re-embed on edit, FK cascade on delete), and trigger/target/guardrail-shaped acceptance gates. Four tunable numbers (`w_text`, `w_vec`, pool sizes, confidence threshold) all swept on the expanded gate, none pinned. Phased: A=embeddings only (incl. entity embeddings), B=typed edges, C=deferred.
 
-**Definition of done (planning step, not the build):** a design doc the team can argue with. Build is downstream of agreement.
+**Next:**
+1. Thicken the eval gate before code: expand `colloquial_relationship` 5 → 15–20 queries; add paraphrase / time-vague / entity-by-role rows. New target: ≥60% on the expanded set, plus measurable lift on the new rows. Author query/answer pairs — do not pad the matcher.
+2. Then start Phase A.
+
+**Gate:** trigger row is `colloquial_relationship` (5q today, **0/5 confirmed on 2026-05-08 full run**); target is the expanded gate above; guardrail is no regression on hard/large/detailed/regression/IRL-47.
 
 ### True multi-hop graph traversal *(O7c)* <!-- from: docs/BACKLOG.md -->
 **Why:** `pam/retrieval/graph_expander.py:258` carries a TODO for constrained multi-hop with path provenance. Today's expander does a fixed traversal pattern. Roadmap-level. Today's eval does not yet present a failing query that obviously requires multi-hop — see decision 2026-05-07 for the deferral reasoning. Stays parked behind the colloquial-relationship suite producing harder cases.
