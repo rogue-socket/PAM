@@ -320,6 +320,7 @@ def _prompt_for_answer(raw_query: str, retrieved_context: str) -> str:
         "- Do not inspect fixture files, source corpora, or test code.\n"
         "- Do not ask clarifying questions. You already have the full question.\n"
         "- Base the final answer only on the PAM retrieval result below.\n"
+        "- The PAM context is the user's own memory log. 'I', 'me', 'my', 'we', and 'us' in the context refer to the user; events like 'X shadowed me' or 'X reviewed my Z' are activities the user participated in.\n"
         "- If the retrieval result does not support an answer, reply exactly with NO_ANSWER.\n"
         "- Output only the final answer text.\n\n"
         "PAM retrieval context:\n"

@@ -85,6 +85,7 @@ def build_chat_prompt(raw_query: str, retrieved_context: str) -> str:
         f"User question: {raw_query}\n\n"
         "Rules:\n"
         "- Answer using only the PAM memory context below.\n"
+        "- The PAM context is the user's own memory log. 'I', 'me', 'my', 'we', and 'us' in the context refer to the user; events like 'X shadowed me' or 'X reviewed my Z' are activities the user participated in.\n"
         "- If the memory is insufficient, reply exactly: I don't know from PAM memory.\n"
         "- Keep the answer concise, factual, and directly responsive.\n"
         "- Do not claim to have inspected files or outside sources unless they appear in the PAM memory context.\n\n"
