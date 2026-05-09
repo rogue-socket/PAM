@@ -8,11 +8,18 @@ LOG_PATH = Path(os.getenv("PAM_LOG_PATH", "pam_log.jsonl"))
 # Retrieval
 TOP_K = 10
 FTS_CANDIDATE_LIMIT = 50
+VEC_CANDIDATE_LIMIT = 50
+# BGE cosines for unrelated text typically land 0.3-0.5; for related, 0.5-0.8.
+# 0.5 is an arbitrary placeholder to filter weak matches; sweep in A.2.
+VEC_SIMILARITY_FLOOR = 0.5
 ENTITY_BOOST_SCORE = 0.2
 EDGE_WEIGHT_EXPANSION_THRESHOLD = 0.3
 
-# Ranking weights (must sum to 1.0 before entity_boost)
-WEIGHT_TEXT_RELEVANCE = 0.45
+# Ranking weights. Pre-hybrid was {text=0.45, recency=0.30, importance=0.25};
+# Phase A.1 splits text→{text=0.30, vec=0.25} (arbitrary placeholders, sweep
+# in A.2). Sum of the four weights here is 1.10; entity_bonus is additive.
+WEIGHT_TEXT_RELEVANCE = 0.30
+WEIGHT_VEC_SIMILARITY = 0.25
 WEIGHT_RECENCY = 0.30
 WEIGHT_IMPORTANCE = 0.25
 

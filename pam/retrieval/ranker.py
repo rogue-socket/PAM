@@ -6,7 +6,14 @@ from dataclasses import dataclass, field
 from math import exp
 from typing import Any
 
-from config import ENTITY_BOOST_SCORE, TOP_K, WEIGHT_IMPORTANCE, WEIGHT_RECENCY, WEIGHT_TEXT_RELEVANCE
+from config import (
+    ENTITY_BOOST_SCORE,
+    TOP_K,
+    WEIGHT_IMPORTANCE,
+    WEIGHT_RECENCY,
+    WEIGHT_TEXT_RELEVANCE,
+    WEIGHT_VEC_SIMILARITY,
+)
 from pam.db.edges import Edge, get_edges_between
 from pam.db.nodes import Node, increment_access_count
 from pam.db.schema import utcnow
@@ -55,7 +62,13 @@ def days_since(dt, now) -> float:
     return max((now - dt).total_seconds() / 86400.0, 0.0)
 
 
-def score(node: Node, fts_rank: float | None, entity_boost: bool, now) -> tuple[float, dict[str, float]]:
+def score(
+    node: Node,
+    fts_rank: float | None,
+    entity_boost: bool,
+    now,
+    vector_similarity: float | None = None,
+) -> tuple[float, dict[str, float]]:
     """Return (total, components). Components are post-weight contributions
     that sum to total exactly under the same float arithmetic, so callers
     can attribute a node's rank to specific signals without re-deriving
@@ -68,15 +81,18 @@ def score(node: Node, fts_rank: float | None, entity_boost: bool, now) -> tuple[
     recency = exp(-0.01 * days_since(node.valid_at, now))
     importance = node.importance
     entity_bonus = ENTITY_BOOST_SCORE if entity_boost else 0.0
+    vec_sim = max(0.0, vector_similarity) if vector_similarity is not None else 0.0
 
     components = {
         "text_relevance": WEIGHT_TEXT_RELEVANCE * text_relevance,
+        "vector_similarity": WEIGHT_VEC_SIMILARITY * vec_sim,
         "recency": WEIGHT_RECENCY * recency,
         "importance": WEIGHT_IMPORTANCE * importance,
         "entity_bonus": entity_bonus,
     }
     total = (
         components["text_relevance"]
+        + components["vector_similarity"]
         + components["recency"]
         + components["importance"]
         + components["entity_bonus"]
@@ -619,6 +635,7 @@ def rank_and_assemble(
     expanded: ExpandedResult,
     parsed: ParsedQuery,
     top_k: int | None = None,
+    vector_similarities: dict[str, float] | None = None,
 ) -> RetrievalResult:
     now = utcnow()
     combined: dict[str, tuple[Node, float | None]] = {node.id: (node, fts_rank) for node, fts_rank in candidates}
@@ -626,10 +643,17 @@ def rank_and_assemble(
     for node in expanded.nodes:
         combined.setdefault(node.id, (node, None))
 
+    vector_similarities = vector_similarities or {}
     node_scores: dict[str, float] = {}
     score_components: dict[str, dict[str, float]] = {}
     for node, fts_rank in combined.values():
-        total, components = score(node, fts_rank, node.id in expanded.entity_boosted_ids, now)
+        total, components = score(
+            node,
+            fts_rank,
+            node.id in expanded.entity_boosted_ids,
+            now,
+            vector_similarity=vector_similarities.get(node.id),
+        )
         node_scores[node.id] = total
         score_components[node.id] = components
     scored_items = [(node, node_scores[node.id]) for node, _ in combined.values()]

@@ -85,7 +85,7 @@ class DatabaseModuleTests(unittest.TestCase):
         self.assertIn("nodes_ai", tables)
         self.assertIn("nodes_au", tables)
         self.assertIn("nodes_ad", tables)
-        self.assertEqual(get_current_version(self.conn), 1)
+        self.assertEqual(get_current_version(self.conn), 2)
 
     def test_node_crud_round_trip_and_filters(self) -> None:
         node_id = create_node(
@@ -245,7 +245,7 @@ class DatabaseModuleTests(unittest.TestCase):
     def test_initialize_is_idempotent(self) -> None:
         initialize(self.conn)
         initialize(self.conn)
-        self.assertEqual(get_current_version(self.conn), 1)
+        self.assertEqual(get_current_version(self.conn), 2)
 
     def test_foreign_keys_are_enforced_for_edges(self) -> None:
         with self.assertRaises(sqlite3.IntegrityError):

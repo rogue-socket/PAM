@@ -5,10 +5,11 @@ import re
 import sqlite3
 import time
 
-from config import FTS_CANDIDATE_LIMIT, LOG_PATH
+from config import FTS_CANDIDATE_LIMIT, LOG_PATH, VEC_CANDIDATE_LIMIT, VEC_SIMILARITY_FLOOR
 from pam.db.fts import fts_search
 from pam.db.nodes import row_to_node
 from pam.db.schema import datetime_to_iso, get_initialized_connection, resolve_workspace_id, utcnow
+from pam.embeddings import embed_query
 from pam.retrieval.graph_expander import expand
 from pam.retrieval.query_parser import ParsedQuery, parse_query_with_metadata
 from pam.retrieval.ranker import RetrievalResult, rank_and_assemble
@@ -216,6 +217,70 @@ def fts_search_with_filter(conn: sqlite3.Connection, parsed: ParsedQuery, worksp
     return _time_range_seed_candidates(conn, parsed, workspace_id)
 
 
+def vector_search(
+    conn: sqlite3.Connection,
+    raw_query: str,
+    workspace_id: str | None,
+    limit: int = VEC_CANDIDATE_LIMIT,
+) -> list[tuple]:
+    """Embed query and pull top-N nearest nodes from vec_nodes.
+
+    Returns [(node, cosine_similarity), ...]. Empty list if embeddings or
+    vec_nodes are unavailable, or if the workspace has no embedded nodes.
+    """
+    qvec = embed_query(raw_query)
+    if qvec is None:
+        return []
+    try:
+        rows = conn.execute(
+            """
+            SELECT n.*, vn.distance AS vec_distance
+            FROM (
+                SELECT rowid, distance
+                FROM vec_nodes
+                WHERE embedding MATCH ?
+                ORDER BY distance
+                LIMIT ?
+            ) AS vn
+            JOIN vec_node_map m ON m.rowid = vn.rowid
+            JOIN nodes n ON n.id = m.node_id
+            WHERE n.status IN ('active', 'draft', 'reference')
+              AND (? IS NULL OR n.workspace_id = ?)
+            """,
+            (qvec, limit, workspace_id, workspace_id),
+        ).fetchall()
+    except sqlite3.OperationalError:
+        return []
+
+    results: list[tuple] = []
+    for row in rows:
+        node = row_to_node(row)
+        # vec0 returns L2 distance on normalized vectors; convert to cosine
+        # similarity via cos = 1 - dist^2 / 2.
+        dist = row["vec_distance"] or 0.0
+        cosine = max(0.0, 1.0 - (dist * dist) / 2.0)
+        if cosine < VEC_SIMILARITY_FLOOR:
+            continue
+        results.append((node, cosine))
+    return results
+
+
+def _merge_fts_and_vector(
+    fts_candidates: list[tuple],
+    vec_candidates: list[tuple],
+) -> tuple[list[tuple], dict[str, float]]:
+    """Union FTS hits and vector hits by node id, preserving FTS rank for ranker."""
+    merged: list[tuple] = list(fts_candidates)
+    seen = {node.id for node, _ in merged}
+    similarities: dict[str, float] = {}
+    for node, sim in vec_candidates:
+        similarities[node.id] = sim
+        if node.id not in seen:
+            seen.add(node.id)
+            merged.append((node, None))
+    return merged, similarities
+
+
 def _append_query_log(payload: dict) -> None:
     from pam.telemetry import append_log_line
 
@@ -265,9 +330,13 @@ def _retrieve_with_parsed_query(
 ) -> RetrievalResult:
     resolved_workspace_id = resolve_workspace_id(workspace_id)
     # TODO: Let strong anchors seed graph traversal before or alongside FTS so graph-heavy prompts are not gated on lexical recall alone.
-    candidates = fts_search_with_filter(conn, parsed, workspace_id=resolved_workspace_id)
+    fts_candidates = fts_search_with_filter(conn, parsed, workspace_id=resolved_workspace_id)
+    vec_candidates = vector_search(conn, raw_query, resolved_workspace_id)
+    candidates, vector_similarities = _merge_fts_and_vector(fts_candidates, vec_candidates)
     expanded = expand(conn, [node for node, _ in candidates], parsed)
-    result = rank_and_assemble(conn, candidates, expanded, parsed, top_k)
+    result = rank_and_assemble(
+        conn, candidates, expanded, parsed, top_k, vector_similarities=vector_similarities
+    )
 
     duration_ms = int((time.perf_counter() - started) * 1000)
     _append_query_log(

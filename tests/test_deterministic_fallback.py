@@ -64,6 +64,20 @@ class DeterministicFallbackContractTests(unittest.TestCase):
         self.query_llm_patch.start()
         self.addCleanup(self.query_llm_patch.stop)
 
+        # Pin the "Neither" tier of the fallback table — no LLM and no
+        # embeddings — so this contract test continues to prove FTS+graph
+        # correctness when both optional channels are unavailable.
+        self.embed_text_patch = mock.patch(
+            "pam.ingestion.pipeline.embed_text", return_value=None
+        )
+        self.embed_text_patch.start()
+        self.addCleanup(self.embed_text_patch.stop)
+        self.embed_query_patch = mock.patch(
+            "pam.retrieval.search.embed_query", return_value=None
+        )
+        self.embed_query_patch.start()
+        self.addCleanup(self.embed_query_patch.stop)
+
         conn = get_connection(self.db_path)
         try:
             initialize(conn)

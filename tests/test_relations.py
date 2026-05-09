@@ -123,12 +123,17 @@ class RelationSuiteBase(unittest.TestCase):
             )
 
     def _retrieve(self, raw_query: str, *, parsed: ParsedQuery, top_k: int = 6):
+        # This suite exercises FTS + graph behavior with a curated parsed
+        # query — embeddings would inject extra candidates that change the
+        # gap/cluster shape these tests assert on. Pin to FTS-only.
         with mock.patch(
             "pam.retrieval.search.parse_query_with_metadata", return_value=(parsed, False)
         ), mock.patch(
             "pam.retrieval.search.get_initialized_connection",
             side_effect=lambda: get_initialized_connection(self.db_path),
-        ), mock.patch("pam.retrieval.search.LOG_PATH", self.log_path):
+        ), mock.patch("pam.retrieval.search.LOG_PATH", self.log_path), mock.patch(
+            "pam.retrieval.search.embed_query", return_value=None
+        ):
             return retrieve(raw_query, top_k=top_k)
 
     @staticmethod

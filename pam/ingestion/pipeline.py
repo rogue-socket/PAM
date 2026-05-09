@@ -12,6 +12,7 @@ from config import LOG_PATH, SESSION_STALENESS_HOURS
 from pam.db.edges import Edge, create_edge, get_edges_to
 from pam.db.nodes import Node, create_node, delete_node, get_node, list_nodes, update_node
 from pam.db.schema import datetime_to_iso, get_connection, initialize, utcnow
+from pam.embeddings import embed_text
 from pam.ingestion.entity_linker import LinkEntitiesResult, link_entities_detailed
 from pam.ingestion.extract import extract, infer_node_type
 from pam.ingestion.llm import extract_entities, generate_edge_fact, summarize
@@ -153,6 +154,35 @@ def _ensure_source_parent_edge(
 
     _validate_parent_note_id(conn, parent_note_id)
     _create_derived_from_edge(conn, parent_note_id, source_id)
+
+
+def _embed_node(
+    conn: sqlite3.Connection,
+    *,
+    node_id: str,
+    title: str,
+    content: str,
+    summary: str,
+    entity_names: list[str],
+) -> None:
+    """Embed and store the node vector. No-op if embeddings unavailable."""
+    parts = [p for p in (title, summary, content) if p]
+    if entity_names:
+        parts.append(" ".join(entity_names))
+    text = " ".join(parts)
+    vec = embed_text(text)
+    if vec is None:
+        return
+    try:
+        cur = conn.execute("INSERT INTO vec_nodes(embedding) VALUES (?)", (vec,))
+        conn.execute(
+            "INSERT INTO vec_node_map(node_id, rowid) VALUES (?, ?)",
+            (node_id, cur.lastrowid),
+        )
+        conn.commit()
+    except sqlite3.OperationalError as exc:
+        # vec_nodes table missing — sqlite-vec not loaded. Tier-down silently.
+        logger.debug("vec_nodes write skipped: %s", exc)
 
 
 def _run_llm_enrichment(content: str) -> tuple[str, list[dict], dict[str, str], int]:
@@ -527,6 +557,14 @@ def ingest(
         node_id = create_node(conn, main_node)
 
         try:
+            _embed_node(
+                conn,
+                node_id=node_id,
+                title=main_node.title,
+                content=main_node.content,
+                summary=summary,
+                entity_names=[e.get("name", "") for e in entities if e.get("name")],
+            )
             # TODO: Extend ingest-time graph supply beyond entity mentions so this path can write dependable concept, influence, and evolution edges with explicit evidence.
             link_result = LinkEntitiesResult(entity_ids=[], linked_existing=0, created_new=0)
             if extracted["node_type"] in {"event", "note"}:

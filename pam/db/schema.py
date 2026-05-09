@@ -23,6 +23,30 @@ CONNECTION_PRAGMAS = (
 # tests via _HEALTH_CHECKED_PATHS.clear().
 _HEALTH_CHECKED_PATHS: set[str] = set()
 
+# Tracks whether sqlite-vec failed to load on a given connection so we only
+# warn once per process.
+_VEC_EXT_WARNED = False
+
+
+def _try_load_vec_extension(conn: sqlite3.Connection) -> bool:
+    """Best-effort load of sqlite-vec. Returns True if loaded.
+
+    Failure is non-fatal — embedding-aware retrieval tier-downs to FTS-only
+    per the deterministic-fallback contract.
+    """
+    global _VEC_EXT_WARNED
+    try:
+        import sqlite_vec
+        conn.enable_load_extension(True)
+        sqlite_vec.load(conn)
+        conn.enable_load_extension(False)
+        return True
+    except Exception as exc:
+        if not _VEC_EXT_WARNED:
+            logger.warning("sqlite-vec extension unavailable (%s); vector retrieval disabled", exc)
+            _VEC_EXT_WARNED = True
+        return False
+
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
@@ -61,6 +85,7 @@ def get_connection(db_path: Path | str | None = None) -> sqlite3.Connection:
     conn = sqlite3.connect(str(target))
     _apply_connection_pragmas(conn)
     conn.row_factory = sqlite3.Row
+    _try_load_vec_extension(conn)
     return conn
 
 
@@ -176,8 +201,43 @@ def migrate_v1(conn: sqlite3.Connection) -> None:
     )
 
 
+def migrate_v2(conn: sqlite3.Connection) -> None:
+    """Add vec_nodes virtual table for hybrid retrieval.
+
+    No-op if sqlite-vec isn't loaded — the schema_version row still gets
+    written so we don't retry on every open. The system runs FTS-only
+    until the extension becomes available; backfill is a separate migration.
+    """
+    from pam.embeddings import EMBEDDING_DIM
+
+    has_vec = bool(conn.execute("SELECT 1 FROM pragma_function_list WHERE name = 'vec_version'").fetchone())
+    if not has_vec:
+        return
+
+    conn.executescript(
+        f"""
+        CREATE VIRTUAL TABLE IF NOT EXISTS vec_nodes USING vec0(
+            embedding FLOAT[{EMBEDDING_DIM}]
+        );
+
+        CREATE TABLE IF NOT EXISTS vec_node_map (
+            node_id TEXT PRIMARY KEY REFERENCES nodes(id) ON DELETE CASCADE,
+            rowid INTEGER NOT NULL UNIQUE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_vec_node_map_rowid ON vec_node_map(rowid);
+
+        CREATE TRIGGER IF NOT EXISTS vec_nodes_after_node_delete
+        AFTER DELETE ON nodes BEGIN
+            DELETE FROM vec_nodes WHERE rowid IN (SELECT rowid FROM vec_node_map WHERE node_id = old.id);
+        END;
+        """
+    )
+
+
 MIGRATIONS = {
     1: ("Initial schema — nodes, edges, fts_index, triggers", migrate_v1),
+    2: ("Hybrid retrieval — vec_nodes virtual table + node_id map", migrate_v2),
 }
 
 
@@ -191,11 +251,15 @@ def _ensure_schema_compatibility(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE nodes ADD COLUMN workspace_id TEXT NOT NULL DEFAULT ''")
 
     conn.execute("CREATE INDEX IF NOT EXISTS idx_nodes_workspace_id ON nodes(workspace_id)")
-    conn.execute(
-        "UPDATE nodes SET workspace_id = ? WHERE workspace_id IS NULL OR workspace_id = ''",
-        (resolve_workspace_id(),),
-    )
-    conn.commit()
+    needs_backfill = conn.execute(
+        "SELECT 1 FROM nodes WHERE workspace_id IS NULL OR workspace_id = '' LIMIT 1"
+    ).fetchone()
+    if needs_backfill:
+        conn.execute(
+            "UPDATE nodes SET workspace_id = ? WHERE workspace_id IS NULL OR workspace_id = ''",
+            (resolve_workspace_id(),),
+        )
+        conn.commit()
 
 
 def initialize(conn: sqlite3.Connection) -> None:

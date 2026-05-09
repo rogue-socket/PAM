@@ -28,13 +28,17 @@ When an item gets picked up, move it into a session doc or `audits/` / `test_fin
 
 These aren't either-or. Embeddings give recall on phrasing variation; cue rules give precision on high-confidence patterns and let the graph stay queryable.
 
-**Status:** design doc landed at [`docs/HYBRID_RETRIEVAL_PLAN.md`](docs/HYBRID_RETRIEVAL_PLAN.md) (2026-05-08, revised same day). Specifies bge-small-en-v1.5 + sqlite-vec for embeddings (nodes *and* entity records in Phase A), LLM-at-ingest typed-edge extraction with controlled vocab (MANAGES/MENTORS/COLLABORATES_WITH), score-combination formula, deterministic fallback tiers, embedding lifecycle (synchronous re-embed on edit, FK cascade on delete), and trigger/target/guardrail-shaped acceptance gates. Four tunable numbers (`w_text`, `w_vec`, pool sizes, confidence threshold) all swept on the expanded gate, none pinned. Phased: A=embeddings only (incl. entity embeddings), B=typed edges, C=deferred.
+**Status:** Phase A.1 (node embeddings only — entity embeddings + backfill deferred) landed 2026-05-09. Trigger row crushed: `colloquial_relationship` 6/16 → **13/16 (81.3%)** on the expanded IRL gate. Hard 192/192 and large 200/200 held. Detailed 96/110 → 93/110 (-3 raw, ~-1 to -2 after matcher-FN triage). See [`test_findings/2026-05-09_02-02-20_phase-a1-irl-lift.md`](test_findings/2026-05-09_02-02-20_phase-a1-irl-lift.md).
 
-**Next:**
-1. Thicken the eval gate before code: expand `colloquial_relationship` 5 → 15–20 queries; add paraphrase / time-vague / entity-by-role rows. New target: ≥60% on the expanded set, plus measurable lift on the new rows. Author query/answer pairs — do not pad the matcher.
-2. Then start Phase A.
+**Next (Phase A.2):**
+1. Sweep the four tunable numbers (`w_text=0.30`, `w_vec=0.25`, `VEC_SIMILARITY_FLOOR=0.5`, FTS-50 ∪ vec-50) on the expanded IRL gate plus detailed as a guardrail. Goal: keep IRL ≥56/68 while clawing detailed back to ≥96/110.
+2. Triage the 3 detailed relationship misses that look like matcher-FNs (idx 43, 81, 94 in the 2026-05-09 run) — Claude-confirmation pass to nail down the real regression number.
+3. Backfill script `pam migrate --backfill-embeddings` for existing DBs (currently only post-v2 ingests get embedded).
+4. Entity-record embeddings (deferred from A.1 per the test_findings entry).
 
-**Gate:** trigger row is `colloquial_relationship` (5q today, **0/5 confirmed on 2026-05-08 full run**); target is the expanded gate above; guardrail is no regression on hard/large/detailed/regression/IRL-47.
+**Phase B (LLM-at-ingest typed edges)** stays parked behind A.2. Three IRL colloquial misses (`"who do I pair with on code?"`, `"who's my most frequent collaborator?"`, `"who critiques my code?"`) suggest typed `COLLABORATES_WITH`/`REVIEWS` edges would help — but A.2 weight-sweep may close enough of the gap that B isn't needed. Don't start B before A.2 numbers land.
+
+**Guardrail bookkeeping:** the design doc's strict reading of the floor (detailed ≥96/110) is currently violated by 3 raw / ~1-2 real hits. A.2 must restore it.
 
 ### True multi-hop graph traversal *(O7c)* <!-- from: docs/BACKLOG.md -->
 **Why:** `pam/retrieval/graph_expander.py:258` carries a TODO for constrained multi-hop with path provenance. Today's expander does a fixed traversal pattern. Roadmap-level. Today's eval does not yet present a failing query that obviously requires multi-hop — see decision 2026-05-07 for the deferral reasoning. Stays parked behind the colloquial-relationship suite producing harder cases.

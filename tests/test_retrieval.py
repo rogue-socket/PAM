@@ -314,13 +314,18 @@ class RetrievalModuleTests(unittest.TestCase):
         return corpus
 
     def _retrieve_with_fallback(self, query: str):
+        # Pins the "Neither" fallback tier (no LLM, no embeddings) so this
+        # suite keeps testing FTS+graph behavior. Hybrid behavior is covered
+        # by the IRL eval.
         with mock.patch(
             "pam.retrieval.query_parser._invoke_llm",
             side_effect=LLMUnavailableError("missing sdk"),
         ), mock.patch(
             "pam.retrieval.search.get_initialized_connection",
             side_effect=lambda: get_initialized_connection(self.db_path),
-        ), mock.patch("pam.retrieval.search.LOG_PATH", self.log_path):
+        ), mock.patch("pam.retrieval.search.LOG_PATH", self.log_path), mock.patch(
+            "pam.retrieval.search.embed_query", return_value=None
+        ):
             return retrieve(query, top_k=5)
 
     @staticmethod
@@ -689,16 +694,18 @@ class RetrievalModuleTests(unittest.TestCase):
 
         expected_text = abs(-2.0) / (1.0 + abs(-2.0))
         expected_recency = math.exp(-0.01 * 5)
-        expected = 0.45 * expected_text + 0.30 * expected_recency + 0.25 * 0.8 + 0.2
+        expected = 0.30 * expected_text + 0.30 * expected_recency + 0.25 * 0.8 + 0.2
         self.assertAlmostEqual(value, expected)
         self.assertEqual(
             value,
             components["text_relevance"]
+            + components["vector_similarity"]
             + components["recency"]
             + components["importance"]
             + components["entity_bonus"],
         )
         self.assertEqual(components["entity_bonus"], 0.2)
+        self.assertEqual(components["vector_similarity"], 0.0)
 
     def test_ranking_prefers_more_negative_fts_rank(self) -> None:
         fixed_now = datetime(2026, 4, 22, tzinfo=timezone.utc)
@@ -755,7 +762,7 @@ class RetrievalModuleTests(unittest.TestCase):
             components = result.score_components[node.id]
             self.assertEqual(
                 set(components),
-                {"text_relevance", "recency", "importance", "entity_bonus"},
+                {"text_relevance", "vector_similarity", "recency", "importance", "entity_bonus"},
             )
             total, _ = score(
                 node,
@@ -766,6 +773,7 @@ class RetrievalModuleTests(unittest.TestCase):
             self.assertEqual(
                 total,
                 components["text_relevance"]
+                + components["vector_similarity"]
                 + components["recency"]
                 + components["importance"]
                 + components["entity_bonus"],
