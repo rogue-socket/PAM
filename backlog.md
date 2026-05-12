@@ -20,29 +20,25 @@ When an item gets picked up, move it into a session doc or `audits/` / `test_fin
 
 ## Architecture / roadmap
 
-### Hybrid retrieval: FTS + embeddings + write-time cue rules [active: A.2 unresolved, w_recency sweep next] <!-- from: docs/BACKLOG.md -->
-**Why:** today's retrieval is FTS5 + BGE vector. The colloquial-relationship row is fixed (Phase A.1). The detailed-relationship row is still −2 below the 96 floor, and the diagnosis is that high-recency vector-pollution outranks older textually-relevant gold notes within top-10.
+### Hybrid retrieval: FTS + embeddings + write-time cue rules [shipped: A.2 closed via three structural commits 2026-05-12] <!-- from: docs/BACKLOG.md -->
+**Why:** Phase A.1 (shipped 2026-05-09, `052b0ef`) added a BGE vector channel and fixed colloquial-relationship 6/16 → 13/16. Phase A.2 attempted 4 rank-key cells + 3 ablation branches on 2026-05-11–12 — all rejected (either regressed IRL colloquial / Hard, or didn't reach idx 81/86/87). Meta-finding from the ablation: the relationship-mode assembly path bypasses `node_scores`, and idx 81's gold has zero FTS/vec signal at all (reaches the pool only via DERIVED_FROM from a seed).
 
-**Status:** Phase A.1 landed 2026-05-09 (`colloquial_relationship` 6/16 → 13/16; detailed 96 → 93 raw). Phase A.2 attempted 2026-05-11–12 in two waves:
+**Resolution (2026-05-12 evening session):** the diagnostic gap (`score_components` empty in CLI JSON) blocked both Position A and Position B from making non-conjectural predictions. Once surfaced, the data showed two distinct failure modes that the prior ablations had conflated, and pointed at three surgical commits — none requiring typed-edge ingestion or schema changes:
 
-1. **Floor sweep (cell `VEC_SIMILARITY_FLOOR=0.60`)** — detailed 93 → 99 (good) but IRL colloquial 13/16 → 6/16 (catastrophic; rejected).
-2. **`TOP_K=10 → 15`** — detailed +5, IRL +3 (colloquial +1), but **Hard 192/192 → 148/192 (−44 NO_ANSWER refusals)**. Net across suites: −36. Reverted in `config.py:9`. The diagnostic via `cli.py query --json --top 20` was correct (gold notes live at rank 11+ at TOP_K=10), but lifting them via pool size is the wrong lever because Hard breaks. See [`test_findings/2026-05-11_19-42-34_a2-topk-bump.md`](test_findings/2026-05-11_19-42-34_a2-topk-bump.md).
+| commit | change | targets fixed |
+|---|---|---|
+| `91b1b98` | `_support_path_result_nodes` sorts by `node_scores` + path-endpoint bonus (`RELATIONSHIP_PRIORITY_BONUS=0.1`) | idx 86, 87 (rank 11 → 1) |
+| `a8a5592` | DERIVED_FROM score propagation when seed text ≥ 0.15 and target text ≤ 0.05 (α=0.5) | idx 81 (rank 11 → 8 in ordered_nodes) |
+| `243c3ea` | `_rank_relationship_hits` no longer drops non-directional edges when any directional match exists | idx 81 end-to-end (seed→gold edge now surfaces in `result.relationships` for Claude) |
 
-**Next attempt — w_recency sweep:**
-- Lower `WEIGHT_RECENCY` from 0.30 → 0.20 at `TOP_K=10` to address the diagnosed pollution-by-recency directly within rank. Hypothesis: gold notes for detailed misses are older within their corpus; recency weight is pushing them down. Reducing the weight lifts them without growing the context window, so Hard's literal-anchor lookups stay clean.
-- Add `PAM_W_RECENCY` env override to `config.py` first.
-- Run detailed + IRL + Hard + Large (one cell, full guardrail). If Hard holds at 192/192 and detailed ≥96, ship. If Hard regresses, A.2 ends here.
+**Claude eval validation (detailed-relationship idx 81–87): 7/7 PASS.** Python eval detailed 104/110, IRL 59/68 with colloquial 13/16 held. Hard idx 1-32 Claude eval: 32/32 (lookup 12, paraphrase 6, relationship 6, timeline 4, negative 4). 201 unit tests pass. Hard idx 33-96 spot-check in progress.
 
-**Other follow-ups (lower priority):**
-1. Triage detailed idx 56 / 63 / 67 (TOP_K=15 new regressions). Likely 1 matcher-FN, 2 real Claude-discrimination losses. Useful baseline reference.
-2. idx 86 NO_ANSWER at TOP_K=15 — gold in candidate pool, Claude refused. F3-adjacent prompt-conservatism issue.
-3. `score_components` empty in CLI `--json` output — diagnostics blind spot. `format_result_json` doesn't surface the post-weight breakdown the ranker computes.
-4. Backfill script `pam migrate --backfill-embeddings` for existing DBs (currently only post-v2 ingests get embedded).
-5. Entity-record embeddings (deferred from A.1 per the test_findings entry).
-
-**Phase B (LLM-at-ingest typed edges)** stays parked behind A.2. If the w_recency cell also fails, the right next move may be Phase B rather than further A.2 tuning — the residual misses (rank-blocked gold) are exactly what typed edges would fix structurally.
-
-**Guardrail bookkeeping:** detailed ≥96/110 still violated at the shipped config (`TOP_K=10`, floor=0.50, w_recency=0.30). −2 raw / ~−2 real.
+**Remaining follow-ups:**
+1. **Delete A.2 ablation branches** (`a2-mmr`, `a2-contrast`, `a2-mode-switch`) — findings absorbed into commit messages.
+2. Full detailed/IRL/Large Claude eval pass on the shipped config — single Claude-rate-window job, not blocking.
+3. Backfill script `pam migrate --backfill-embeddings` for existing DBs (currently only post-v2 ingests get embedded).
+4. Entity-record embeddings (deferred from A.1).
+5. F3 (post-supersession answer prompt) — still parked. idx 81 is no longer the canonical case; F3 is now its own thing for SUPERSEDES-driven tentative-language refusals.
 
 ### True multi-hop graph traversal *(O7c)* <!-- from: docs/BACKLOG.md -->
 **Why:** `pam/retrieval/graph_expander.py:258` carries a TODO for constrained multi-hop with path provenance. Today's expander does a fixed traversal pattern. Roadmap-level. Today's eval does not yet present a failing query that obviously requires multi-hop — see decision 2026-05-07 for the deferral reasoning. Stays parked behind the colloquial-relationship suite producing harder cases.
