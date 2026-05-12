@@ -115,6 +115,8 @@ def _result_to_dict(result: RetrievalResult) -> dict:
         "graph_explanations": [_graph_explanation_to_dict(explanation) for explanation in result.graph_explanations],
         "session_groups": result.session_groups,
         "query_meta": result.query_meta,
+        "ordered_nodes": [_node_to_dict(node) for node in result.ordered_nodes],
+        "score_components": result.score_components,
     }
 
 

@@ -14,6 +14,11 @@ VEC_CANDIDATE_LIMIT = int(os.getenv("PAM_VEC_LIMIT", "50"))
 VEC_SIMILARITY_FLOOR = float(os.getenv("PAM_VEC_FLOOR", "0.5"))
 ENTITY_BOOST_SCORE = 0.2
 EDGE_WEIGHT_EXPANSION_THRESHOLD = 0.3
+# Bonus added to a node's effective rank-key when it's a relationship-mode
+# anchor (endpoint of a ranked edge or support path). Small enough that a
+# clearly higher-scoring non-anchor node still beats it; large enough that
+# anchors with moderate scores stay surfaced for relationship-mode queries.
+RELATIONSHIP_PRIORITY_BONUS = float(os.getenv("PAM_RELATIONSHIP_PRIORITY_BONUS", "0.1"))
 
 # Ranking weights. Pre-hybrid was {text=0.45, recency=0.30, importance=0.25};
 # Phase A.1 splits text→{text=0.30, vec=0.25} (arbitrary placeholders, sweep

@@ -8,6 +8,7 @@ from typing import Any
 
 from config import (
     ENTITY_BOOST_SCORE,
+    RELATIONSHIP_PRIORITY_BONUS,
     TOP_K,
     WEIGHT_IMPORTANCE,
     WEIGHT_RECENCY,
@@ -226,30 +227,29 @@ def _support_path_result_nodes(
     combined: dict[str, tuple[Node, float | None]],
     scored_items: list[tuple[Node, float]],
     support_paths: list[ExpandedPath],
+    node_scores: dict[str, float],
     *,
     limit: int,
 ) -> list[Node]:
-    ordered_ids: list[str] = []
-    seen: set[str] = set()
-
+    # Same shape as _relationship_result_nodes: score-sort with a bonus for
+    # support-path endpoints, rather than path-iteration order which bypassed
+    # node_scores and buried high-scoring gold past `limit`.
+    prioritized_ids: set[str] = set()
     for path in support_paths:
         for node_id in (path.anchor_id, path.related_id):
-            if node_id in seen or node_id not in combined:
-                continue
-            seen.add(node_id)
-            ordered_ids.append(node_id)
+            if node_id in combined:
+                prioritized_ids.add(node_id)
 
-    target_node_count = max(limit, len(ordered_ids))
-    top_nodes = [combined[node_id][0] for node_id in ordered_ids]
-    for node, _ in scored_items:
-        if len(top_nodes) >= target_node_count:
-            break
-        if node.id in seen:
-            continue
-        seen.add(node.id)
-        top_nodes.append(node)
+    def keyfn(item: tuple[Node, float]) -> float:
+        node, _ = item
+        score = node_scores.get(node.id, 0.0)
+        if node.id in prioritized_ids:
+            score += RELATIONSHIP_PRIORITY_BONUS
+        return score
 
-    return top_nodes
+    sorted_items = sorted(scored_items, key=keyfn, reverse=True)
+    target_node_count = max(limit, len(prioritized_ids))
+    return [node for node, _ in sorted_items[:target_node_count]]
 
 
 def _session_groups(nodes: list[Node]) -> dict[str, list[str]]:
@@ -684,6 +684,7 @@ def rank_and_assemble(
                 combined,
                 scored_items,
                 ranked_support_paths,
+                node_scores,
                 limit=limit,
             )
             expanded.support_paths = ranked_support_paths
