@@ -8,37 +8,41 @@ When an item gets picked up, move it into a session doc or `audits/` / `test_fin
 
 ## Eval / quality
 
-### F3 — post-supersession answer prompt <!-- from: docs/AUDIT_2026-05-06.md -->
+### F3 — post-supersession answer prompt [next] <!-- from: docs/AUDIT_2026-05-06.md -->
 **Why:** detailed Q55 (`"What launch correction superseded the April 18 plan?"`) returns NO_ANSWER. Retrieval surfaces the new node with the SUPERSEDES path, but Claude refuses because the new note title (`"Idea: revise X to Y…"`) reads as tentative under the "if not supported reply NO_ANSWER" rule.
 **How to apply:** either (a) add a prompt rule that an outgoing SUPERSEDES edge promotes a tentative-sounding note to a current value, or (b) add a `## Current values` section in `format_for_context_window` that flattens SUPERSEDES paths.
 
 ### Detailed-suite residual miss triage <!-- from: test_findings/2026-05-08_17-37-11_eval-full-pass.md -->
-**Why:** today's full run shifted detailed to 96/110 (rel 22/26, paraphrase 23/28). ~14 residual misses remain — most likely matcher false-negatives but unclassified.
+**Why:** today's full run shifted detailed to 96/110 (rel 22/26, paraphrase 23/28). ~14 residual misses remain — most likely matcher false-negatives but unclassified. As of the 2026-05-09 Phase A.1 run the detailed number is 93/110 with 3 new misses (idx 43, 81, 94) that look like matcher-FNs in description form — those triage cleanly with the same triage pass.
 **How to apply:** triage residual misses (classify into matcher-FN / retrieval-gap / answer-prompt). Per the matcher-as-triage-filter decision, surface real misses for action and discard matcher-FNs. Lower priority than the F3 + hybrid-retrieval items above given today's lift.
 
 ---
 
 ## Architecture / roadmap
 
-### Hybrid retrieval: FTS + embeddings + write-time cue rules <!-- from: docs/BACKLOG.md -->
-**Why:** today's retrieval is FTS5 only. That's why Q24 fails — the answer note has zero token overlap with the question. Two complementary directions:
+### Hybrid retrieval: FTS + embeddings + write-time cue rules [active: A.2 unresolved, w_recency sweep next] <!-- from: docs/BACKLOG.md -->
+**Why:** today's retrieval is FTS5 + BGE vector. The colloquial-relationship row is fixed (Phase A.1). The detailed-relationship row is still −2 below the 96 floor, and the diagnosis is that high-recency vector-pollution outranks older textually-relevant gold notes within top-10.
 
-1. **Embeddings (vector search)** as a second recall channel. Encode each node's content + summary + linked entity names; encode the query the same way; surface top-k by cosine similarity alongside FTS hits. Catches semantic paraphrase like `"1:1 with Anya"` ≈ `"who's my manager"`.
-2. **Write-time cue rules for relationship inference.** When ingest sees `"1:1 with X"`, `"X reviewed my PR"`, etc., write a typed edge (`MANAGES`, `REVIEWED`, `COLLABORATES_WITH`) with a `confidence` field. Then graph queries can answer role questions without semantic retrieval.
+**Status:** Phase A.1 landed 2026-05-09 (`colloquial_relationship` 6/16 → 13/16; detailed 96 → 93 raw). Phase A.2 attempted 2026-05-11–12 in two waves:
 
-These aren't either-or. Embeddings give recall on phrasing variation; cue rules give precision on high-confidence patterns and let the graph stay queryable.
+1. **Floor sweep (cell `VEC_SIMILARITY_FLOOR=0.60`)** — detailed 93 → 99 (good) but IRL colloquial 13/16 → 6/16 (catastrophic; rejected).
+2. **`TOP_K=10 → 15`** — detailed +5, IRL +3 (colloquial +1), but **Hard 192/192 → 148/192 (−44 NO_ANSWER refusals)**. Net across suites: −36. Reverted in `config.py:9`. The diagnostic via `cli.py query --json --top 20` was correct (gold notes live at rank 11+ at TOP_K=10), but lifting them via pool size is the wrong lever because Hard breaks. See [`test_findings/2026-05-11_19-42-34_a2-topk-bump.md`](test_findings/2026-05-11_19-42-34_a2-topk-bump.md).
 
-**Status:** Phase A.1 (node embeddings only — entity embeddings + backfill deferred) landed 2026-05-09. Trigger row crushed: `colloquial_relationship` 6/16 → **13/16 (81.3%)** on the expanded IRL gate. Hard 192/192 and large 200/200 held. Detailed 96/110 → 93/110 (-3 raw, ~-1 to -2 after matcher-FN triage). See [`test_findings/2026-05-09_02-02-20_phase-a1-irl-lift.md`](test_findings/2026-05-09_02-02-20_phase-a1-irl-lift.md).
+**Next attempt — w_recency sweep:**
+- Lower `WEIGHT_RECENCY` from 0.30 → 0.20 at `TOP_K=10` to address the diagnosed pollution-by-recency directly within rank. Hypothesis: gold notes for detailed misses are older within their corpus; recency weight is pushing them down. Reducing the weight lifts them without growing the context window, so Hard's literal-anchor lookups stay clean.
+- Add `PAM_W_RECENCY` env override to `config.py` first.
+- Run detailed + IRL + Hard + Large (one cell, full guardrail). If Hard holds at 192/192 and detailed ≥96, ship. If Hard regresses, A.2 ends here.
 
-**Next (Phase A.2):**
-1. Sweep the four tunable numbers (`w_text=0.30`, `w_vec=0.25`, `VEC_SIMILARITY_FLOOR=0.5`, FTS-50 ∪ vec-50) on the expanded IRL gate plus detailed as a guardrail. Goal: keep IRL ≥56/68 while clawing detailed back to ≥96/110.
-2. Triage the 3 detailed relationship misses that look like matcher-FNs (idx 43, 81, 94 in the 2026-05-09 run) — Claude-confirmation pass to nail down the real regression number.
-3. Backfill script `pam migrate --backfill-embeddings` for existing DBs (currently only post-v2 ingests get embedded).
-4. Entity-record embeddings (deferred from A.1 per the test_findings entry).
+**Other follow-ups (lower priority):**
+1. Triage detailed idx 56 / 63 / 67 (TOP_K=15 new regressions). Likely 1 matcher-FN, 2 real Claude-discrimination losses. Useful baseline reference.
+2. idx 86 NO_ANSWER at TOP_K=15 — gold in candidate pool, Claude refused. F3-adjacent prompt-conservatism issue.
+3. `score_components` empty in CLI `--json` output — diagnostics blind spot. `format_result_json` doesn't surface the post-weight breakdown the ranker computes.
+4. Backfill script `pam migrate --backfill-embeddings` for existing DBs (currently only post-v2 ingests get embedded).
+5. Entity-record embeddings (deferred from A.1 per the test_findings entry).
 
-**Phase B (LLM-at-ingest typed edges)** stays parked behind A.2. Three IRL colloquial misses (`"who do I pair with on code?"`, `"who's my most frequent collaborator?"`, `"who critiques my code?"`) suggest typed `COLLABORATES_WITH`/`REVIEWS` edges would help — but A.2 weight-sweep may close enough of the gap that B isn't needed. Don't start B before A.2 numbers land.
+**Phase B (LLM-at-ingest typed edges)** stays parked behind A.2. If the w_recency cell also fails, the right next move may be Phase B rather than further A.2 tuning — the residual misses (rank-blocked gold) are exactly what typed edges would fix structurally.
 
-**Guardrail bookkeeping:** the design doc's strict reading of the floor (detailed ≥96/110) is currently violated by 3 raw / ~1-2 real hits. A.2 must restore it.
+**Guardrail bookkeeping:** detailed ≥96/110 still violated at the shipped config (`TOP_K=10`, floor=0.50, w_recency=0.30). −2 raw / ~−2 real.
 
 ### True multi-hop graph traversal *(O7c)* <!-- from: docs/BACKLOG.md -->
 **Why:** `pam/retrieval/graph_expander.py:258` carries a TODO for constrained multi-hop with path provenance. Today's expander does a fixed traversal pattern. Roadmap-level. Today's eval does not yet present a failing query that obviously requires multi-hop — see decision 2026-05-07 for the deferral reasoning. Stays parked behind the colloquial-relationship suite producing harder cases.

@@ -6,22 +6,22 @@ DB_PATH = Path(os.getenv("PAM_DB_PATH", "pam.db"))
 LOG_PATH = Path(os.getenv("PAM_LOG_PATH", "pam_log.jsonl"))
 
 # Retrieval
-TOP_K = 10
-FTS_CANDIDATE_LIMIT = 50
-VEC_CANDIDATE_LIMIT = 50
+TOP_K = int(os.getenv("PAM_TOP_K", "10"))
+FTS_CANDIDATE_LIMIT = int(os.getenv("PAM_FTS_LIMIT", "50"))
+VEC_CANDIDATE_LIMIT = int(os.getenv("PAM_VEC_LIMIT", "50"))
 # BGE cosines for unrelated text typically land 0.3-0.5; for related, 0.5-0.8.
 # 0.5 is an arbitrary placeholder to filter weak matches; sweep in A.2.
-VEC_SIMILARITY_FLOOR = 0.5
+VEC_SIMILARITY_FLOOR = float(os.getenv("PAM_VEC_FLOOR", "0.5"))
 ENTITY_BOOST_SCORE = 0.2
 EDGE_WEIGHT_EXPANSION_THRESHOLD = 0.3
 
 # Ranking weights. Pre-hybrid was {text=0.45, recency=0.30, importance=0.25};
 # Phase A.1 splits text→{text=0.30, vec=0.25} (arbitrary placeholders, sweep
 # in A.2). Sum of the four weights here is 1.10; entity_bonus is additive.
-WEIGHT_TEXT_RELEVANCE = 0.30
-WEIGHT_VEC_SIMILARITY = 0.25
-WEIGHT_RECENCY = 0.30
-WEIGHT_IMPORTANCE = 0.25
+WEIGHT_TEXT_RELEVANCE = float(os.getenv("PAM_W_TEXT", "0.30"))
+WEIGHT_VEC_SIMILARITY = float(os.getenv("PAM_W_VEC", "0.25"))
+WEIGHT_RECENCY = float(os.getenv("PAM_W_RECENCY", "0.30"))
+WEIGHT_IMPORTANCE = float(os.getenv("PAM_W_IMPORTANCE", "0.25"))
 
 # Lifecycle
 DECAY_LAMBDA = 0.005
