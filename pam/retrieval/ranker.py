@@ -139,12 +139,13 @@ def _rank_relationship_hits(
     if not filtered_edges:
         return []
 
-    directional_edges = [
-        edge for edge in filtered_edges if _edge_matches_requested_direction(edge, anchor_ids, parsed.relation_direction)
-    ]
-    ranked_edges = directional_edges or filtered_edges
+    # Direction match is a +0.35 sort bonus in _score_relationship rather than
+    # a hard filter: dropping non-directional edges loses graph-expanded
+    # targets that aren't in candidate_ids (e.g. detailed-relationship idx 81's
+    # seed -> derived-source edge, where the derived source reaches the pool
+    # via graph expansion, not via FTS/vec).
     return sorted(
-        ranked_edges,
+        filtered_edges,
         key=lambda edge: _score_relationship(
             edge,
             node_scores,
