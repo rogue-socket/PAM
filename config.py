@@ -20,6 +20,17 @@ EDGE_WEIGHT_EXPANSION_THRESHOLD = 0.3
 # anchors with moderate scores stay surfaced for relationship-mode queries.
 RELATIONSHIP_PRIORITY_BONUS = float(os.getenv("PAM_RELATIONSHIP_PRIORITY_BONUS", "0.1"))
 
+# Score propagation along DERIVED_FROM edges: when an FTS-anchored seed has
+# a derived target with near-zero text relevance, the target inherits a
+# fraction of the seed's text contribution. Restores graph-only relevance
+# for queries whose gold connects to an FTS-hit seed by a typed edge with
+# no shared keywords (detailed-relationship idx 81). The asymmetric
+# (seed_floor, sink_ceiling) gate keeps the trigger out of Hard's literal-
+# anchor lookups where both endpoints carry the FTS hit.
+DERIVED_PROPAGATION_ALPHA = float(os.getenv("PAM_DERIVED_PROP_ALPHA", "0.5"))
+DERIVED_PROPAGATION_SEED_FLOOR = float(os.getenv("PAM_DERIVED_PROP_SEED_FLOOR", "0.15"))
+DERIVED_PROPAGATION_SINK_CEILING = float(os.getenv("PAM_DERIVED_PROP_SINK_CEILING", "0.05"))
+
 # Ranking weights. Pre-hybrid was {text=0.45, recency=0.30, importance=0.25};
 # Phase A.1 splits text→{text=0.30, vec=0.25} (arbitrary placeholders, sweep
 # in A.2). Sum of the four weights here is 1.10; entity_bonus is additive.

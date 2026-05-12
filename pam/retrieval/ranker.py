@@ -7,6 +7,9 @@ from math import exp
 from typing import Any
 
 from config import (
+    DERIVED_PROPAGATION_ALPHA,
+    DERIVED_PROPAGATION_SEED_FLOOR,
+    DERIVED_PROPAGATION_SINK_CEILING,
     ENTITY_BOOST_SCORE,
     RELATIONSHIP_PRIORITY_BONUS,
     TOP_K,
@@ -629,6 +632,31 @@ def _build_graph_explanations(
     return explanations
 
 
+def _propagate_along_derived_from(
+    inter_edges: list[Edge],
+    node_scores: dict[str, float],
+    score_components: dict[str, dict[str, float]],
+) -> None:
+    # When a DERIVED_FROM edge connects an FTS-anchored seed to a target with
+    # near-zero text relevance, transfer a fraction of the seed's text
+    # contribution to the target. Models the case where the gold's relevance
+    # is the typed graph edge itself rather than any shared keywords.
+    for edge in inter_edges:
+        if edge.relation != "DERIVED_FROM":
+            continue
+        seed_text = score_components.get(edge.source_id, {}).get("text_relevance", 0.0)
+        target_text = score_components.get(edge.target_id, {}).get("text_relevance", 0.0)
+        if seed_text < DERIVED_PROPAGATION_SEED_FLOOR:
+            continue
+        if target_text > DERIVED_PROPAGATION_SINK_CEILING:
+            continue
+        boost = DERIVED_PROPAGATION_ALPHA * seed_text
+        node_scores[edge.target_id] = node_scores.get(edge.target_id, 0.0) + boost
+        score_components.setdefault(edge.target_id, {})["derived_propagation"] = (
+            score_components.get(edge.target_id, {}).get("derived_propagation", 0.0) + boost
+        )
+
+
 def rank_and_assemble(
     conn: sqlite3.Connection,
     candidates: list[tuple[Node, float]],
@@ -656,14 +684,15 @@ def rank_and_assemble(
         )
         node_scores[node.id] = total
         score_components[node.id] = components
-    scored_items = [(node, node_scores[node.id]) for node, _ in combined.values()]
-    scored_items.sort(key=lambda item: item[1], reverse=True)
-
     limit = top_k or TOP_K
     combined_ids = list(combined)
     combined_id_set = set(combined_ids)
     candidate_ids = {node.id for node, _ in candidates}
     combined_inter_edges = get_edges_between(conn, combined_ids)
+
+    _propagate_along_derived_from(combined_inter_edges, node_scores, score_components)
+    scored_items = [(node, node_scores[node.id]) for node, _ in combined.values()]
+    scored_items.sort(key=lambda item: item[1], reverse=True)
 
     if parsed.answer_mode == "relationship":
         ranked_relationships = _rank_relationship_hits(combined_inter_edges, parsed, candidate_ids, node_scores)
