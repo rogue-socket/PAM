@@ -12,33 +12,21 @@ When an item gets picked up, move it into a session doc or `audits/` / `test_fin
 **Why:** detailed Q55 (`"What launch correction superseded the April 18 plan?"`) returns NO_ANSWER. Retrieval surfaces the new node with the SUPERSEDES path, but Claude refuses because the new note title (`"Idea: revise X to Y…"`) reads as tentative under the "if not supported reply NO_ANSWER" rule.
 **How to apply:** either (a) add a prompt rule that an outgoing SUPERSEDES edge promotes a tentative-sounding note to a current value, or (b) add a `## Current values` section in `format_for_context_window` that flattens SUPERSEDES paths.
 
-### Detailed-suite residual miss triage <!-- from: test_findings/2026-05-08_17-37-11_eval-full-pass.md -->
-**Why:** today's full run shifted detailed to 96/110 (rel 22/26, paraphrase 23/28). ~14 residual misses remain — most likely matcher false-negatives but unclassified. As of the 2026-05-09 Phase A.1 run the detailed number is 93/110 with 3 new misses (idx 43, 81, 94) that look like matcher-FNs in description form — those triage cleanly with the same triage pass.
-**How to apply:** triage residual misses (classify into matcher-FN / retrieval-gap / answer-prompt). Per the matcher-as-triage-filter decision, surface real misses for action and discard matcher-FNs. Lower priority than the F3 + hybrid-retrieval items above given today's lift.
+### Detailed-suite residual miss triage [next] <!-- from: test_findings/2026-05-12_22-30-00_a2-close.md -->
+**Why:** A.2 closed at 96/110 raw (+3 vs A.1 baseline). Remaining 14 misses include known matcher-FNs (#87 "Parser fallback guide", #94 "Acoustic experiment log"), one Claude TIMEOUT (#28), and Claude-pick-variance cases (#81 when storm-handwriting wins). Classify into matcher-FN / Claude-noise / retrieval-gap before deciding if any need code.
+**How to apply:** triage pass against the 14 misses; matcher-FN absorption could push the real number to ~99/110.
 
 ---
 
 ## Architecture / roadmap
 
-### Hybrid retrieval: FTS + embeddings + write-time cue rules [shipped: A.2 closed via three structural commits 2026-05-12] <!-- from: docs/BACKLOG.md -->
-**Why:** Phase A.1 (shipped 2026-05-09, `052b0ef`) added a BGE vector channel and fixed colloquial-relationship 6/16 → 13/16. Phase A.2 attempted 4 rank-key cells + 3 ablation branches on 2026-05-11–12 — all rejected (either regressed IRL colloquial / Hard, or didn't reach idx 81/86/87). Meta-finding from the ablation: the relationship-mode assembly path bypasses `node_scores`, and idx 81's gold has zero FTS/vec signal at all (reaches the pool only via DERIVED_FROM from a seed).
+### Backfill embeddings on existing DBs [next] <!-- from: A.1 / A.2 follow-up -->
+**Why:** Phase A.1 added BGE vector channel; only post-migration-v2 ingests get embedded. Existing repo `pam.db` content has no embedding until each node is edited.
+**How to apply:** `pam migrate --backfill-embeddings` CLI command that walks all nodes missing embeddings and runs them through the encoder. Idempotent.
 
-**Resolution (2026-05-12 evening session):** the diagnostic gap (`score_components` empty in CLI JSON) blocked both Position A and Position B from making non-conjectural predictions. Once surfaced, the data showed two distinct failure modes that the prior ablations had conflated, and pointed at three surgical commits — none requiring typed-edge ingestion or schema changes:
-
-| commit | change | targets fixed |
-|---|---|---|
-| `91b1b98` | `_support_path_result_nodes` sorts by `node_scores` + path-endpoint bonus (`RELATIONSHIP_PRIORITY_BONUS=0.1`) | idx 86, 87 (rank 11 → 1) |
-| `a8a5592` | DERIVED_FROM score propagation when seed text ≥ 0.15 and target text ≤ 0.05 (α=0.5) | idx 81 (rank 11 → 8 in ordered_nodes) |
-| `243c3ea` | `_rank_relationship_hits` no longer drops non-directional edges when any directional match exists | idx 81 end-to-end (seed→gold edge now surfaces in `result.relationships` for Claude) |
-
-**Claude eval validation (full suites):** detailed 96/110 (+3 vs A.1 baseline 93), **Hard 192/192**, IRL 57/68 (one matcher-FN at #9 date format; #55 colloquial is Claude pick variance — rank-1 retrieval result names Rakhi but Claude answered Anya this run). Isolated rerun of idx 81-87 was 7/7. 201 unit tests pass.
-
-**Remaining follow-ups:**
-1. **Delete A.2 ablation branches** (`a2-mmr`, `a2-contrast`, `a2-mode-switch`) — findings absorbed into commit messages.
-2. Full detailed/IRL/Large Claude eval pass on the shipped config — single Claude-rate-window job, not blocking.
-3. Backfill script `pam migrate --backfill-embeddings` for existing DBs (currently only post-v2 ingests get embedded).
-4. Entity-record embeddings (deferred from A.1).
-5. F3 (post-supersession answer prompt) — still parked. idx 81 is no longer the canonical case; F3 is now its own thing for SUPERSEDES-driven tentative-language refusals.
+### Entity-record embeddings [next] <!-- from: A.1 follow-up -->
+**Why:** Today only event/note/source nodes are embedded. Entity records (people, projects, places) aren't, so colloquial queries that name an entity by role don't get an entity-direct vector hit.
+**How to apply:** add embeddings to entity-type nodes at ingest + backfill.
 
 ### True multi-hop graph traversal *(O7c)* <!-- from: docs/BACKLOG.md -->
 **Why:** `pam/retrieval/graph_expander.py:258` carries a TODO for constrained multi-hop with path provenance. Today's expander does a fixed traversal pattern. Roadmap-level. Today's eval does not yet present a failing query that obviously requires multi-hop — see decision 2026-05-07 for the deferral reasoning. Stays parked behind the colloquial-relationship suite producing harder cases.
