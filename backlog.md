@@ -31,7 +31,7 @@ When an item gets picked up, move it into a session doc or `audits/` / `test_fin
 | `a8a5592` | DERIVED_FROM score propagation when seed text ≥ 0.15 and target text ≤ 0.05 (α=0.5) | idx 81 (rank 11 → 8 in ordered_nodes) |
 | `243c3ea` | `_rank_relationship_hits` no longer drops non-directional edges when any directional match exists | idx 81 end-to-end (seed→gold edge now surfaces in `result.relationships` for Claude) |
 
-**Claude eval validation:** detailed idx 81-87 = **7/7 PASS** (idx 81/86/87 all flipped from MISS), **Hard 192/192 (full suite)**. Python eval: detailed 104/110, IRL 59/68 with colloquial 13/16 held. 201 unit tests pass.
+**Claude eval validation (full suites):** detailed 96/110 (+3 vs A.1 baseline 93), **Hard 192/192**, IRL 57/68 (one matcher-FN at #9 date format; #55 colloquial is Claude pick variance — rank-1 retrieval result names Rakhi but Claude answered Anya this run). Isolated rerun of idx 81-87 was 7/7. 201 unit tests pass.
 
 **Remaining follow-ups:**
 1. **Delete A.2 ablation branches** (`a2-mmr`, `a2-contrast`, `a2-mode-switch`) — findings absorbed into commit messages.
