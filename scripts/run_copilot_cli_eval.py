@@ -257,12 +257,19 @@ def _render_retrieval_context(result) -> str:
     lines = ["Retrieved PAM results:"]
     budget = 5000
 
+    title_by_id: dict[str, str] = {}
+    for node in result.ordered_nodes:
+        label = (node.title or node.id).strip() or node.id
+        title_by_id[node.id] = label
+
     if result.relationships:
         lines.append("")
         lines.append("Relationships:")
         for edge in result.relationships[:10]:
             fact = (edge.fact or "").strip()
-            relation_line = f"- {edge.relation}: {edge.source_id} -> {edge.target_id}"
+            src_label = title_by_id.get(edge.source_id, edge.source_id)
+            tgt_label = title_by_id.get(edge.target_id, edge.target_id)
+            relation_line = f'- "{src_label}" {edge.relation} "{tgt_label}"'
             if fact:
                 relation_line += f" | {fact}"
             candidate = "\n".join([*lines, relation_line])
