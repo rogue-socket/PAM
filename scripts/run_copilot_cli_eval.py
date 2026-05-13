@@ -507,6 +507,7 @@ def _evaluate_queries(
         "query_type_hits": {},
         "query_type_totals": {},
         "misses": [],
+        "transcript": [],
     }
 
     all_queries = fixture["queries"]
@@ -564,6 +565,17 @@ def _evaluate_queries(
                 miss["error"] = error_message
             summary["misses"].append(miss)
 
+        entry = {
+            "index": index,
+            "query_type": query_type,
+            "query": query_case["query"],
+            "answer": answer,
+            "passed": passed,
+        }
+        if error_message is not None:
+            entry["error"] = error_message
+        summary["transcript"].append(entry)
+
         # Emit batch summary after every batch_size queries
         if batch_size and index % batch_size == 0:
             batch_label = f"queries {index - batch_size + 1}-{index}"
@@ -594,6 +606,7 @@ def main() -> int:
 
     fixture, label = _load_fixture(args.suite)
 
+    started_at = datetime.now(timezone.utc)
     _log(f"[eval] ingesting {len(fixture['corpus'])} corpus items...")
     _ingest_fixture(fixture, db_path=db_path, log_path=log_path, link_dir=link_dir)
     _log(f"[eval] ingestion complete. starting evaluation.")
@@ -608,16 +621,42 @@ def main() -> int:
         batch_size=args.batch_size,
         start_from=args.start_from,
     )
+    finished_at = datetime.now(timezone.utc)
 
-    payload = {
+    full_payload = {
         "suite": label,
         "backend": args.backend,
         "model": args.model,
+        "top_k": args.top_k,
+        "started_at": started_at.isoformat(),
+        "finished_at": finished_at.isoformat(),
         "db_path": str(db_path),
         "log_path": str(log_path),
-        "summary": summary if args.include_misses else {**summary, "misses": summary["misses"][:10]},
+        "summary": summary,
     }
-    print(json.dumps(payload, ensure_ascii=True, indent=2))
+
+    transcript_dir = ROOT / "test_findings" / "eval_runs"
+    transcript_dir.mkdir(parents=True, exist_ok=True)
+    transcript_name = (
+        f"{started_at.strftime('%Y-%m-%d_%H-%M-%S')}_{args.suite}_{args.backend}.json"
+    )
+    transcript_path = transcript_dir / transcript_name
+    transcript_path.write_text(
+        json.dumps(full_payload, ensure_ascii=True, indent=2),
+        encoding="utf-8",
+    )
+    _log(f"[eval] transcript written to {transcript_path.relative_to(ROOT)}")
+
+    if args.include_misses:
+        stdout_payload = full_payload
+    else:
+        stdout_summary = {
+            **summary,
+            "misses": summary["misses"][:10],
+            "transcript": [],
+        }
+        stdout_payload = {**full_payload, "summary": stdout_summary}
+    print(json.dumps(stdout_payload, ensure_ascii=True, indent=2))
     return 0
 
 
