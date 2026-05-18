@@ -15,6 +15,7 @@ from config import (
 from pam.db.edges import Edge, create_edge
 from pam.db.fts import fts_search_entities
 from pam.db.nodes import Node, create_node
+from pam.embeddings import embed_and_store_node
 
 try:
     from rapidfuzz.fuzz import token_sort_ratio as _rapidfuzz_token_sort_ratio
@@ -37,6 +38,16 @@ class LinkEntitiesResult:
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def _entity_embed_text(node: Node) -> str:
+    """Text to embed for an entity node — name + aliases + category."""
+    aliases = node.metadata.get("aliases") or []
+    if not isinstance(aliases, list):
+        aliases = []
+    category = node.metadata.get("category") or ""
+    parts = [node.title, *(str(a) for a in aliases if a), str(category) if category else ""]
+    return " ".join(p for p in parts if p)
 
 
 def _build_entity_node(name: str, category: str, workspace_id: str | None = None) -> Node:
@@ -112,7 +123,13 @@ def link_entities_detailed(
             entity_id = best_match.id
             linked_existing += 1
         else:
-            entity_id = create_node(conn, _build_entity_node(entity_name, category, workspace_id=workspace_id))
+            entity_node = _build_entity_node(entity_name, category, workspace_id=workspace_id)
+            entity_id = create_node(conn, entity_node)
+            embed_and_store_node(
+                conn,
+                entity_id,
+                _entity_embed_text(entity_node),
+            )
             created_new += 1
 
         create_edge(

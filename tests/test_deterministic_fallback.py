@@ -68,7 +68,7 @@ class DeterministicFallbackContractTests(unittest.TestCase):
         # embeddings — so this contract test continues to prove FTS+graph
         # correctness when both optional channels are unavailable.
         self.embed_text_patch = mock.patch(
-            "pam.ingestion.pipeline.embed_text", return_value=None
+            "pam.embeddings.embed_text", return_value=None
         )
         self.embed_text_patch.start()
         self.addCleanup(self.embed_text_patch.stop)

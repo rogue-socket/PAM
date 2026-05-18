@@ -9,10 +9,13 @@ embed_text/embed_query return None and callers must tolerate that.
 """
 from __future__ import annotations
 
+import json
 import logging
 import os
+import sqlite3
 import struct
 import threading
+from dataclasses import dataclass
 from typing import Sequence
 
 logger = logging.getLogger(__name__)
@@ -95,6 +98,115 @@ def is_available() -> bool:
     return _get_model() is not None
 
 
+def embed_and_store_node(conn: sqlite3.Connection, node_id: str, text: str) -> bool:
+    """Embed `text` and store it under `node_id` in vec_nodes + vec_node_map.
+
+    Returns True on successful write, False if the model is unavailable,
+    the text is empty, or the vec_nodes table is missing (sqlite-vec not
+    loaded). The False path is the deterministic-fallback tier-down — no
+    exception is raised.
+    """
+    vec = embed_text(text)
+    if vec is None:
+        return False
+    try:
+        cur = conn.execute("INSERT INTO vec_nodes(embedding) VALUES (?)", (vec,))
+        conn.execute(
+            "INSERT INTO vec_node_map(node_id, rowid) VALUES (?, ?)",
+            (node_id, cur.lastrowid),
+        )
+        conn.commit()
+        return True
+    except sqlite3.OperationalError as exc:
+        logger.debug("vec_nodes write skipped: %s", exc)
+        return False
+
+
+@dataclass
+class BackfillStats:
+    total: int = 0
+    embedded: int = 0
+    skipped_empty_text: int = 0
+    failed: int = 0
+
+
+def _embed_text_for_node(
+    node_type: str,
+    title: str,
+    content: str,
+    summary: str,
+    metadata: dict,
+) -> str:
+    """Build the embedding text for a node row (backfill flavor).
+
+    Entity nodes carry no content/summary, so combine title + aliases +
+    category from metadata. Other types use title + summary + content;
+    entity_names are not joined-in (they require an edge lookup and
+    the FTS+graph layer already covers entity overlap at retrieval time).
+    """
+    if node_type == "entity":
+        aliases = metadata.get("aliases") or []
+        if not isinstance(aliases, list):
+            aliases = []
+        category = metadata.get("category") or ""
+        parts = [title, *(str(a) for a in aliases if a), str(category) if category else ""]
+        return " ".join(p for p in parts if p)
+    parts = [p for p in (title, summary, content) if p]
+    return " ".join(parts)
+
+
+def backfill_embeddings(conn: sqlite3.Connection) -> BackfillStats:
+    """Embed every node that has no vec_node_map row.
+
+    Raises EmbeddingsUnavailable when the model isn't loadable or the
+    vec_nodes table is missing — backfill is an explicit user command,
+    so silent tier-down is wrong here. Idempotent: nodes already mapped
+    are skipped.
+    """
+    has_vec_table = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='vec_node_map'"
+    ).fetchone()
+    if not has_vec_table:
+        raise EmbeddingsUnavailable(
+            "vec_node_map table missing — run `pam migrate` and ensure sqlite-vec is installed."
+        )
+    if not is_available():
+        raise EmbeddingsUnavailable(
+            "embedding model unavailable — install sentence-transformers and torch."
+        )
+
+    rows = conn.execute(
+        """
+        SELECT n.id, n.type, n.title, n.content, n.summary, n.metadata
+        FROM nodes n
+        LEFT JOIN vec_node_map m ON m.node_id = n.id
+        WHERE m.node_id IS NULL
+        """
+    ).fetchall()
+
+    stats = BackfillStats(total=len(rows))
+    for row in rows:
+        try:
+            metadata = json.loads(row["metadata"] or "{}")
+        except (TypeError, json.JSONDecodeError):
+            metadata = {}
+        text = _embed_text_for_node(
+            node_type=row["type"],
+            title=row["title"] or "",
+            content=row["content"] or "",
+            summary=row["summary"] or "",
+            metadata=metadata,
+        )
+        if not text.strip():
+            stats.skipped_empty_text += 1
+            continue
+        if embed_and_store_node(conn, row["id"], text):
+            stats.embedded += 1
+        else:
+            stats.failed += 1
+    return stats
+
+
 def _reset_for_tests() -> None:
     global _model, _load_failed
     with _model_lock:
@@ -103,9 +215,12 @@ def _reset_for_tests() -> None:
 
 
 __all__ = [
+    "BackfillStats",
     "EMBEDDING_DIM",
     "MODEL_ID",
     "EmbeddingsUnavailable",
+    "backfill_embeddings",
+    "embed_and_store_node",
     "embed_query",
     "embed_text",
     "is_available",

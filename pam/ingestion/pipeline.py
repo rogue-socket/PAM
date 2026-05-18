@@ -12,7 +12,7 @@ from config import LOG_PATH, SESSION_STALENESS_HOURS
 from pam.db.edges import Edge, create_edge, get_edges_to
 from pam.db.nodes import Node, create_node, delete_node, get_node, list_nodes, update_node
 from pam.db.schema import datetime_to_iso, get_connection, initialize, utcnow
-from pam.embeddings import embed_text
+from pam.embeddings import embed_and_store_node
 from pam.ingestion.entity_linker import LinkEntitiesResult, link_entities_detailed
 from pam.ingestion.extract import extract, infer_node_type
 from pam.ingestion.llm import extract_entities, generate_edge_fact, summarize
@@ -165,24 +165,11 @@ def _embed_node(
     summary: str,
     entity_names: list[str],
 ) -> None:
-    """Embed and store the node vector. No-op if embeddings unavailable."""
+    """Embed and store the main-node vector. No-op if embeddings unavailable."""
     parts = [p for p in (title, summary, content) if p]
     if entity_names:
         parts.append(" ".join(entity_names))
-    text = " ".join(parts)
-    vec = embed_text(text)
-    if vec is None:
-        return
-    try:
-        cur = conn.execute("INSERT INTO vec_nodes(embedding) VALUES (?)", (vec,))
-        conn.execute(
-            "INSERT INTO vec_node_map(node_id, rowid) VALUES (?, ?)",
-            (node_id, cur.lastrowid),
-        )
-        conn.commit()
-    except sqlite3.OperationalError as exc:
-        # vec_nodes table missing — sqlite-vec not loaded. Tier-down silently.
-        logger.debug("vec_nodes write skipped: %s", exc)
+    embed_and_store_node(conn, node_id, " ".join(parts))
 
 
 def _run_llm_enrichment(content: str) -> tuple[str, list[dict], dict[str, str], int]:

@@ -11,6 +11,7 @@ from pam.chat_agent import DEFAULT_CHAT_MODEL, ChatAgentError, ChatResponse, ans
 from pam.db.edges import get_edges_from, get_edges_to
 from pam.db.nodes import Node, get_node, list_nodes
 from pam.db.schema import datetime_to_iso, get_connection, initialize
+from pam.embeddings import EmbeddingsUnavailable, backfill_embeddings
 from pam.feedback import downvote, pin, supersede, upvote
 from pam.ingestion.pipeline import ingest
 from pam.lifecycle import apply_decay, unarchive
@@ -515,11 +516,29 @@ def graph(ctx: click.Context, node_id: str) -> None:
 
 
 @cli.command()
+@click.option(
+    "--backfill-embeddings",
+    "backfill_embeddings_flag",
+    is_flag=True,
+    help="After migrations, embed every node that has no vector yet.",
+)
 @click.pass_context
-def migrate(ctx: click.Context) -> None:
+def migrate(ctx: click.Context, backfill_embeddings_flag: bool) -> None:
     """Apply pending schema migrations."""
-    initialize(ctx.obj["conn"])
+    conn = ctx.obj["conn"]
+    initialize(conn)
     click.echo("Migrations applied.")
+    if not backfill_embeddings_flag:
+        return
+    try:
+        stats = backfill_embeddings(conn)
+    except EmbeddingsUnavailable as exc:
+        raise click.ClickException(str(exc))
+    click.echo(
+        f"Embeddings backfill: {stats.embedded} embedded / "
+        f"{stats.skipped_empty_text} skipped (empty text) / "
+        f"{stats.failed} failed / {stats.total} candidates."
+    )
 
 
 @cli.command()
