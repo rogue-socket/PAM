@@ -301,15 +301,22 @@ def _plan_relationships(
     if relationships:
         for edge in relationships:
             fact = edge.fact.strip() or edge_facts.get((edge.source_id, edge.target_id), "").strip()
+            # PAM stores DERIVED_FROM as parent_note -> derived_source, which reads
+            # backwards from natural English ("A DERIVED_FROM B" = A came from B).
+            # Swap endpoints at the render so the line matches its semantic.
+            if edge.relation == "DERIVED_FROM":
+                src_id, tgt_id = edge.target_id, edge.source_id
+            else:
+                src_id, tgt_id = edge.source_id, edge.target_id
             if fact:
                 text = (
-                    f'- "{_node_label(edge.source_id, node_lookup)}" {edge.relation}'
-                    f' "{_node_label(edge.target_id, node_lookup)}" - "{fact}"'
+                    f'- "{_node_label(src_id, node_lookup)}" {edge.relation}'
+                    f' "{_node_label(tgt_id, node_lookup)}" - "{fact}"'
                 )
             else:
                 text = (
-                    f'- "{_node_label(edge.source_id, node_lookup)}" {edge.relation}'
-                    f' "{_node_label(edge.target_id, node_lookup)}"'
+                    f'- "{_node_label(src_id, node_lookup)}" {edge.relation}'
+                    f' "{_node_label(tgt_id, node_lookup)}"'
                 )
             items.append(
                 _LineItem(text=text, kind="ref", refs=frozenset({edge.source_id, edge.target_id}))

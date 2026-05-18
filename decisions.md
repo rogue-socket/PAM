@@ -58,6 +58,11 @@ Four named constants (`LLM_INGESTION_MODEL`, `LLM_QUERY_PARSER_MODEL`, `LLM_CLAU
 **Why:** kayo evals shouldn't depend on env-var hygiene. The split (haiku for ingestion, sonnet for query parsing and answer) reflects the cost/quality tradeoff each call site needs.
 **How to apply:** new LLM call sites should add a named constant to `config.py` rather than hard-coding a model ID at the call site or reading a fresh env var.
 
+## 2026-05-18 — DERIVED_FROM is render-swapped, data convention untouched <!-- from: handoffs/2026-05-13.md /wrap, 2026-05-18 /start -->
+PAM stores `DERIVED_FROM` as `source=parent_note (older) → target=derived_source (newer)`. Natural English `A DERIVED_FROM B` reads "A came from B" — the **opposite** of PAM's encoding. Fix is a render-time swap of source/target labels at every consumer that surfaces edges as titled text for an LLM: `scripts/run_copilot_cli_eval.py::_render_retrieval_context` and `pam/agent_interface.py::_plan_relationships`. The underlying edge convention (`pam/ingestion/pipeline.py:131-142`) is unchanged.
+**Why:** changing the data convention would require migrating every consumer of `edge.source_id`/`edge.target_id` for this relation. The render-time swap is the cheap, contained fix. Discovered via a multi-hour debug on detailed-eval residuals #79/#80; eval-validated to 101/110 (vectors-on) when the swap is applied at render time. Without the swap, Claude mis-interprets DERIVED_FROM follow-on questions whenever edges render with titles instead of UUIDs.
+**How to apply:** any new render path that turns edges into natural-English text must swap source/target when `relation == "DERIVED_FROM"`. If a future change reverses the underlying convention, audit every consumer that currently swaps and remove the workaround in lockstep — half-migrated state will flip the meaning back.
+
 ## 2026-05-07 — Forward-looking design plans stay in `docs/`, not `prds/` <!-- from: /port-docs -->
 `docs/DEPENDABILITY_PLAN.md` and `docs/RETRIEVAL_RELATIONS_PLAN.md` are alive, evolving roadmap docs.
 **Why:** date-stamped `prds/` filenames are for snapshots. An evolving plan with a frozen-date filename misleads future agents about freshness.

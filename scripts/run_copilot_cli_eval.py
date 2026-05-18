@@ -267,8 +267,15 @@ def _render_retrieval_context(result) -> str:
         lines.append("Relationships:")
         for edge in result.relationships[:10]:
             fact = (edge.fact or "").strip()
-            src_label = title_by_id.get(edge.source_id, edge.source_id)
-            tgt_label = title_by_id.get(edge.target_id, edge.target_id)
+            # PAM stores DERIVED_FROM as parent_note -> derived_source, which reads
+            # backwards from natural English ("A DERIVED_FROM B" = A came from B).
+            # Swap endpoints at the render so the line matches its semantic.
+            if edge.relation == "DERIVED_FROM":
+                src_id, tgt_id = edge.target_id, edge.source_id
+            else:
+                src_id, tgt_id = edge.source_id, edge.target_id
+            src_label = title_by_id.get(src_id, src_id)
+            tgt_label = title_by_id.get(tgt_id, tgt_id)
             relation_line = f'- "{src_label}" {edge.relation} "{tgt_label}"'
             if fact:
                 relation_line += f" | {fact}"

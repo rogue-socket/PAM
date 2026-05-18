@@ -6,18 +6,6 @@ When an item gets picked up, move it into a session doc or `audits/` / `test_fin
 
 ---
 
-## Eval / quality
-
-### F3 — post-supersession answer prompt [next] <!-- from: docs/AUDIT_2026-05-06.md -->
-**Why:** detailed Q55 (`"What launch correction superseded the April 18 plan?"`) returns NO_ANSWER. Retrieval surfaces the new node with the SUPERSEDES path, but Claude refuses because the new note title (`"Idea: revise X to Y…"`) reads as tentative under the "if not supported reply NO_ANSWER" rule.
-**How to apply:** either (a) add a prompt rule that an outgoing SUPERSEDES edge promotes a tentative-sounding note to a current value, or (b) add a `## Current values` section in `format_for_context_window` that flattens SUPERSEDES paths.
-
-### Detailed-suite residual miss triage [next] <!-- from: test_findings/2026-05-12_22-30-00_a2-close.md -->
-**Why:** A.2 closed at 96/110 raw (+3 vs A.1 baseline). Remaining 14 misses include known matcher-FNs (#87 "Parser fallback guide", #94 "Acoustic experiment log"), one Claude TIMEOUT (#28), and Claude-pick-variance cases (#81 when storm-handwriting wins). Classify into matcher-FN / Claude-noise / retrieval-gap before deciding if any need code.
-**How to apply:** triage pass against the 14 misses; matcher-FN absorption could push the real number to ~99/110.
-
----
-
 ## Architecture / roadmap
 
 ### Backfill embeddings on existing DBs [next] <!-- from: A.1 / A.2 follow-up -->
