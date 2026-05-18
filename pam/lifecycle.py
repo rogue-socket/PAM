@@ -7,6 +7,7 @@ from math import exp
 from time import perf_counter
 
 from config import ARCHIVE_THRESHOLD, DECAY_LAMBDA, IMPORTANCE_DEFAULT, IMPORTANCE_MAX, IMPORTANCE_MIN, LOG_PATH
+from pam.db import transaction
 from pam.db.nodes import Node, bulk_update_importance, get_node, list_nodes, update_node
 from pam.db.schema import utcnow, utcnow_iso
 
@@ -59,7 +60,7 @@ def _archive_decayed_nodes(conn: sqlite3.Connection, updates: list[tuple[str, fl
         if new_importance >= ARCHIVE_THRESHOLD:
             continue
 
-        update_node(conn, node_id, status="archived")
+        update_node(conn, node_id, status="archived", commit=False)
         archived_count += 1
         _append_log(
             {
@@ -78,8 +79,9 @@ def apply_decay(conn: sqlite3.Connection) -> dict[str, int]:
     eligible_nodes = _eligible_nodes(conn)
     updates, skipped_pinned = _plan_decay_updates(eligible_nodes, now)
 
-    bulk_update_importance(conn, updates)
-    archived_count = _archive_decayed_nodes(conn, updates)
+    with transaction(conn):
+        bulk_update_importance(conn, updates, commit=False)
+        archived_count = _archive_decayed_nodes(conn, updates)
 
     summary = {
         "nodes_processed": len(eligible_nodes),

@@ -10,6 +10,7 @@ from __future__ import annotations
 import sqlite3
 
 from config import IMPORTANCE_MIN, LOG_PATH, SUPERSEDE_IMPORTANCE_FACTOR
+from pam.db import transaction
 from pam.db.edges import Edge, create_edge
 from pam.db.nodes import Node, update_importance, update_node
 from pam.db.schema import utcnow, utcnow_iso
@@ -36,25 +37,27 @@ def apply_supersedes(
     Returns True if the edge was newly created (i.e., this was the first
     application), False if it was a duplicate.
     """
-    created = create_edge(
-        conn,
-        Edge(
-            source_id=new_node_id,
-            target_id=old_node.id,
-            relation="SUPERSEDES",
-            weight=1.0,
-            fact=fact,
-            created_at=utcnow(),
-        ),
-    )
+    with transaction(conn):
+        created = create_edge(
+            conn,
+            Edge(
+                source_id=new_node_id,
+                target_id=old_node.id,
+                relation="SUPERSEDES",
+                weight=1.0,
+                fact=fact,
+                created_at=utcnow(),
+            ),
+            commit=False,
+        )
 
-    old_importance = old_node.importance
-    new_importance = old_importance
-    if created:
-        new_importance = max(old_importance * SUPERSEDE_IMPORTANCE_FACTOR, IMPORTANCE_MIN)
-        update_importance(conn, old_node.id, new_importance)
+        old_importance = old_node.importance
+        new_importance = old_importance
+        if created:
+            new_importance = max(old_importance * SUPERSEDE_IMPORTANCE_FACTOR, IMPORTANCE_MIN)
+            update_importance(conn, old_node.id, new_importance, commit=False)
 
-    update_node(conn, old_node.id, status="reference")
+        update_node(conn, old_node.id, status="reference", commit=False)
 
     _log_supersede(
         new_node_id=new_node_id,

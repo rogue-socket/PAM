@@ -11,6 +11,7 @@ from config import (
     LOG_PATH,
     UPVOTE_DELTA,
 )
+from pam.db import transaction
 from pam.db.edges import update_edge_weight
 from pam.db.nodes import Node, get_node, update_importance
 from pam.db.schema import utcnow_iso
@@ -63,16 +64,19 @@ def upvote(
 
     new_importance = min(node.importance + UPVOTE_DELTA, IMPORTANCE_MAX)
 
-    for source_id, target_id, relation in edge_ids or []:
-        update_edge_weight(conn, source_id, target_id, relation, EDGE_UPVOTE_DELTA)
+    with transaction(conn):
+        for source_id, target_id, relation in edge_ids or []:
+            update_edge_weight(conn, source_id, target_id, relation, EDGE_UPVOTE_DELTA, commit=False)
+        update_importance(conn, node_id, new_importance, commit=False)
 
-    _update_importance_with_log(
-        conn,
-        node=node,
-        node_id=node_id,
-        event="upvote",
-        new_importance=new_importance,
-        extra_payload={"edges_boosted": len(edge_ids or [])},
+    _append_log(
+        {
+            "event": "upvote",
+            "node_id": node_id,
+            "old_importance": node.importance,
+            "new_importance": new_importance,
+            "edges_boosted": len(edge_ids or []),
+        }
     )
     return True
 
