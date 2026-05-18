@@ -33,7 +33,7 @@ def row_to_edge(row: sqlite3.Row) -> Edge:
     )
 
 
-def create_edge(conn: sqlite3.Connection, edge: Edge) -> bool:
+def create_edge(conn: sqlite3.Connection, edge: Edge, *, commit: bool = True) -> bool:
     """Insert an edge. Return True on success, False if duplicate (same PK)."""
     try:
         conn.execute(
@@ -53,11 +53,13 @@ def create_edge(conn: sqlite3.Connection, edge: Edge) -> bool:
     except sqlite3.IntegrityError as exc:
         message = str(exc)
         if "UNIQUE constraint failed" in message or "PRIMARY KEY" in message:
-            conn.rollback()
+            if commit:
+                conn.rollback()
             return False
         raise
 
-    conn.commit()
+    if commit:
+        conn.commit()
     return True
 
 
@@ -120,6 +122,8 @@ def update_edge_weight(
     target_id: str,
     relation: str,
     delta: float,
+    *,
+    commit: bool = True,
 ) -> None:
     """Adjust edge weight by delta, clamped to [0.0, 1.0]."""
     row = conn.execute(
@@ -134,13 +138,15 @@ def update_edge_weight(
         "UPDATE edges SET weight = ? WHERE source_id = ? AND target_id = ? AND relation = ?",
         (new_weight, source_id, target_id, relation),
     )
-    conn.commit()
+    if commit:
+        conn.commit()
 
 
-def delete_edges_for_node(conn: sqlite3.Connection, node_id: str) -> None:
+def delete_edges_for_node(conn: sqlite3.Connection, node_id: str, *, commit: bool = True) -> None:
     """Explicitly delete all edges for a node. (CASCADE handles this too, but this is for logging.)"""
     conn.execute("DELETE FROM edges WHERE source_id = ? OR target_id = ?", (node_id, node_id))
-    conn.commit()
+    if commit:
+        conn.commit()
 
 
 __all__ = [

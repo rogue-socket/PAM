@@ -155,7 +155,7 @@ def row_to_node(row: sqlite3.Row) -> Node:
     )
 
 
-def create_node(conn: sqlite3.Connection, node: Node) -> str:
+def create_node(conn: sqlite3.Connection, node: Node, *, commit: bool = True) -> str:
     """Insert a node. Generate UUID if node.id is empty. Return the ID."""
     node_id = node.id or str(uuid.uuid4())
 
@@ -170,7 +170,8 @@ def create_node(conn: sqlite3.Connection, node: Node) -> str:
         """,
         _node_insert_values(node, node_id),
     )
-    conn.commit()
+    if commit:
+        conn.commit()
     return node_id
 
 
@@ -180,7 +181,7 @@ def get_node(conn: sqlite3.Connection, node_id: str) -> Node | None:
     return row_to_node(row) if row else None
 
 
-def update_node(conn: sqlite3.Connection, node_id: str, **fields) -> bool:
+def update_node(conn: sqlite3.Connection, node_id: str, *, commit: bool = True, **fields) -> bool:
     """Update specified fields. Always set updated_at = now(). Return True if row existed."""
     unexpected = set(fields) - UPDATABLE_FIELDS
     if unexpected:
@@ -202,14 +203,16 @@ def update_node(conn: sqlite3.Connection, node_id: str, **fields) -> bool:
         f"UPDATE nodes SET {', '.join(assignments)} WHERE id = ?",
         params,
     )
-    conn.commit()
+    if commit:
+        conn.commit()
     return cursor.rowcount > 0
 
 
-def delete_node(conn: sqlite3.Connection, node_id: str) -> bool:
+def delete_node(conn: sqlite3.Connection, node_id: str, *, commit: bool = True) -> bool:
     """Delete a node. CASCADE removes edges. Return True if row existed."""
     cursor = conn.execute("DELETE FROM nodes WHERE id = ?", (node_id,))
-    conn.commit()
+    if commit:
+        conn.commit()
     return cursor.rowcount > 0
 
 
@@ -270,23 +273,25 @@ def find_by_content_hash(conn: sqlite3.Connection, content_hash: str, workspace_
     return row_to_node(row) if row else None
 
 
-def increment_access_count(conn: sqlite3.Connection, node_id: str) -> None:
+def increment_access_count(conn: sqlite3.Connection, node_id: str, *, commit: bool = True) -> None:
     """Atomically increment access_count by 1."""
     conn.execute("UPDATE nodes SET access_count = access_count + 1 WHERE id = ?", (node_id,))
-    conn.commit()
+    if commit:
+        conn.commit()
 
 
-def update_importance(conn: sqlite3.Connection, node_id: str, new_importance: float) -> None:
+def update_importance(conn: sqlite3.Connection, node_id: str, new_importance: float, *, commit: bool = True) -> None:
     """Set importance, clamped to [0.0, 1.0]. Update updated_at."""
     updated_at = datetime_to_iso(utcnow())
     conn.execute(
         "UPDATE nodes SET importance = ?, updated_at = ? WHERE id = ?",
         _importance_update_params(node_id, new_importance, updated_at),
     )
-    conn.commit()
+    if commit:
+        conn.commit()
 
 
-def bulk_update_importance(conn: sqlite3.Connection, updates: list[tuple[str, float]]) -> None:
+def bulk_update_importance(conn: sqlite3.Connection, updates: list[tuple[str, float]], *, commit: bool = True) -> None:
     """Batch update importance for decay. Each tuple is (node_id, new_importance)."""
     if not updates:
         return
@@ -296,7 +301,8 @@ def bulk_update_importance(conn: sqlite3.Connection, updates: list[tuple[str, fl
         "UPDATE nodes SET importance = ?, updated_at = ? WHERE id = ?",
         [_importance_update_params(node_id, importance, updated_at) for node_id, importance in updates],
     )
-    conn.commit()
+    if commit:
+        conn.commit()
 
 
 __all__ = [

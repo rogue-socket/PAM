@@ -98,7 +98,7 @@ def is_available() -> bool:
     return _get_model() is not None
 
 
-def embed_and_store_node(conn: sqlite3.Connection, node_id: str, text: str) -> bool:
+def embed_and_store_node(conn: sqlite3.Connection, node_id: str, text: str, *, commit: bool = True) -> bool:
     """Embed `text` and store it under `node_id` in vec_nodes + vec_node_map.
 
     Returns True on successful write, False if the model is unavailable,
@@ -115,7 +115,8 @@ def embed_and_store_node(conn: sqlite3.Connection, node_id: str, text: str) -> b
             "INSERT INTO vec_node_map(node_id, rowid) VALUES (?, ?)",
             (node_id, cur.lastrowid),
         )
-        conn.commit()
+        if commit:
+            conn.commit()
         return True
     except sqlite3.OperationalError as exc:
         logger.debug("vec_nodes write skipped: %s", exc)
