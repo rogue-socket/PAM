@@ -9,8 +9,9 @@ from datetime import datetime
 from pathlib import Path
 
 from config import LOG_PATH, SESSION_STALENESS_HOURS
+from pam.db import transaction
 from pam.db.edges import Edge, create_edge, get_edges_to
-from pam.db.nodes import Node, create_node, delete_node, get_node, list_nodes, update_node
+from pam.db.nodes import Node, create_node, get_node, list_nodes, update_node
 from pam.db.schema import datetime_to_iso, get_connection, initialize, utcnow
 from pam.embeddings import embed_and_store_node
 from pam.ingestion.entity_linker import LinkEntitiesResult, link_entities_detailed
@@ -139,6 +140,7 @@ def _create_derived_from_edge(conn: sqlite3.Connection, parent_note_id: str, sou
             fact="",
             created_at=utcnow(),
         ),
+        commit=False,
     )
 
 
@@ -169,7 +171,7 @@ def _embed_node(
     parts = [p for p in (title, summary, content) if p]
     if entity_names:
         parts.append(" ".join(entity_names))
-    embed_and_store_node(conn, node_id, " ".join(parts))
+    embed_and_store_node(conn, node_id, " ".join(parts), commit=False)
 
 
 def _run_llm_enrichment(content: str) -> tuple[str, list[dict], dict[str, str], int]:
@@ -209,6 +211,7 @@ def _create_related_edge(
             fact=fact,
             created_at=utcnow(),
         ),
+        commit=False,
     )
 
 
@@ -445,6 +448,7 @@ def _infer_explicit_cross_memory_relations(
                     fact=derivation_fact,
                     created_at=utcnow(),
                 ),
+                commit=False,
             )
 
     contradiction_fact = _cue_fact(content, CONTRADICTS_NEGATIVE_CUE_PATTERN)
@@ -461,6 +465,7 @@ def _infer_explicit_cross_memory_relations(
                     fact=f"{contradiction_fact} Conflicts with: {support_fact}",
                     created_at=utcnow(),
                 ),
+                commit=False,
             )
 
     supersede_fact = _cue_fact(content, SUPERSEDES_CUE_PATTERN)
@@ -519,12 +524,13 @@ def ingest(
 
         extracted = extract(normalized, node_type=node_type, url=url, parent_note_id=parent_note_id, conn=conn)
         if isinstance(extracted, str):
-            _ensure_source_parent_edge(
-                conn,
-                node_type=resolved_node_type,
-                parent_note_id=parent_note_id,
-                source_id=extracted,
-            )
+            with transaction(conn):
+                _ensure_source_parent_edge(
+                    conn,
+                    node_type=resolved_node_type,
+                    parent_note_id=parent_note_id,
+                    source_id=extracted,
+                )
             _log_ingest_event(
                 node_id=extracted,
                 node_type=resolved_node_type,
@@ -541,9 +547,8 @@ def ingest(
         summary, entities, edge_facts, llm_calls = _run_llm_enrichment(extracted["content"])
 
         main_node = _build_main_node(extracted, summary)
-        node_id = create_node(conn, main_node)
-
-        try:
+        with transaction(conn):
+            node_id = create_node(conn, main_node, commit=False)
             _embed_node(
                 conn,
                 node_id=node_id,
@@ -589,9 +594,6 @@ def ingest(
                 parent_note_id=extracted.get("parent_note_id"),
                 source_id=node_id,
             )
-        except Exception:
-            delete_node(conn, node_id)
-            raise
 
         _log_ingest_event(
             node_id=node_id,

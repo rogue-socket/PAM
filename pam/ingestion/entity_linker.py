@@ -12,6 +12,7 @@ from config import (
     IMPORTANCE_DEFAULT,
     MAX_ENTITIES_PER_INGESTION,
 )
+from pam.db import transaction
 from pam.db.edges import Edge, create_edge
 from pam.db.fts import fts_search_entities
 from pam.db.nodes import Node, create_node
@@ -95,57 +96,60 @@ def link_entities_detailed(
 
     del content
 
-    for entity in entities[:MAX_ENTITIES_PER_INGESTION]:
-        entity_name = str(entity.get("name", "")).strip()
-        category = str(entity.get("category", "")).strip().lower()
-        if not entity_name or category not in ENTITY_CATEGORIES:
-            continue
+    with transaction(conn):
+        for entity in entities[:MAX_ENTITIES_PER_INGESTION]:
+            entity_name = str(entity.get("name", "")).strip()
+            category = str(entity.get("category", "")).strip().lower()
+            if not entity_name or category not in ENTITY_CATEGORIES:
+                continue
 
-        dedup_key = entity_name.lower()
-        if dedup_key in seen_names:
-            continue
-        seen_names.add(dedup_key)
+            dedup_key = entity_name.lower()
+            if dedup_key in seen_names:
+                continue
+            seen_names.add(dedup_key)
 
-        candidates = fts_search_entities(conn, entity_name, limit=20, workspace_id=workspace_id)
-        best_match = None
-        best_score = 0
-        for candidate in candidates:
-            for candidate_name in _candidate_names(candidate):
-                score = _token_sort_ratio(entity_name, candidate_name)
-                if score > best_score:
-                    best_score = score
-                    best_match = candidate
+            candidates = fts_search_entities(conn, entity_name, limit=20, workspace_id=workspace_id)
+            best_match = None
+            best_score = 0
+            for candidate in candidates:
+                for candidate_name in _candidate_names(candidate):
+                    score = _token_sort_ratio(entity_name, candidate_name)
+                    if score > best_score:
+                        best_score = score
+                        best_match = candidate
 
-        if best_match is not None and (
-            best_score >= ENTITY_FUZZY_MATCH_THRESHOLD
-            or (candidates and best_score >= ENTITY_FUZZY_MATCH_THRESHOLD_FTS)
-        ):
-            entity_id = best_match.id
-            linked_existing += 1
-        else:
-            entity_node = _build_entity_node(entity_name, category, workspace_id=workspace_id)
-            entity_id = create_node(conn, entity_node)
-            embed_and_store_node(
+            if best_match is not None and (
+                best_score >= ENTITY_FUZZY_MATCH_THRESHOLD
+                or (candidates and best_score >= ENTITY_FUZZY_MATCH_THRESHOLD_FTS)
+            ):
+                entity_id = best_match.id
+                linked_existing += 1
+            else:
+                entity_node = _build_entity_node(entity_name, category, workspace_id=workspace_id)
+                entity_id = create_node(conn, entity_node, commit=False)
+                embed_and_store_node(
+                    conn,
+                    entity_id,
+                    _entity_embed_text(entity_node),
+                    commit=False,
+                )
+                created_new += 1
+
+            create_edge(
                 conn,
-                entity_id,
-                _entity_embed_text(entity_node),
+                Edge(
+                    source_id=node_id,
+                    target_id=entity_id,
+                    relation="REFERS_TO",
+                    weight=1.0,
+                    fact=edge_facts.get(entity_name, ""),
+                    created_at=_utcnow(),
+                ),
+                commit=False,
             )
-            created_new += 1
 
-        create_edge(
-            conn,
-            Edge(
-                source_id=node_id,
-                target_id=entity_id,
-                relation="REFERS_TO",
-                weight=1.0,
-                fact=edge_facts.get(entity_name, ""),
-                created_at=_utcnow(),
-            ),
-        )
-
-        if entity_id not in linked_ids:
-            linked_ids.append(entity_id)
+            if entity_id not in linked_ids:
+                linked_ids.append(entity_id)
 
     return LinkEntitiesResult(
         entity_ids=linked_ids,
