@@ -10,7 +10,8 @@ import click
 from pam.chat_agent import DEFAULT_CHAT_MODEL, ChatAgentError, ChatResponse, answer_with_pam
 from pam.db.edges import get_edges_from, get_edges_to
 from pam.db.nodes import Node, get_node, list_nodes
-from pam.db.schema import datetime_to_iso, get_connection, initialize
+from pam.db.fts import rebuild_fts
+from pam.db.schema import datetime_to_iso, doctor_report, get_connection, initialize
 from pam.embeddings import EmbeddingsUnavailable, backfill_embeddings
 from pam.feedback import downvote, pin, supersede, upvote
 from pam.ingestion.pipeline import ingest
@@ -539,6 +540,38 @@ def migrate(ctx: click.Context, backfill_embeddings_flag: bool) -> None:
         f"{stats.skipped_empty_text} skipped (empty text) / "
         f"{stats.failed} failed / {stats.total} candidates."
     )
+
+
+@cli.command()
+@click.option("--json", "as_json", is_flag=True, help="Emit the report as JSON.")
+@click.pass_context
+def doctor(ctx: click.Context, as_json: bool) -> None:
+    """Report database health. Exit 1 if drift detected."""
+    conn = ctx.obj["conn"]
+    report = doctor_report(conn)
+    if as_json:
+        click.echo(json.dumps(report, indent=2))
+    else:
+        click.echo(f"Schema version:           {report['schema_version']}")
+        click.echo(f"Integrity check:          {report['integrity_check']}")
+        click.echo(f"Nodes:                    {report['nodes_count']}")
+        click.echo(f"FTS rows missing:         {report['missing_fts_rows']}")
+        click.echo(f"FTS rows orphaned:        {report['orphaned_fts_rows']}")
+        click.echo(f"Vector table present:     {report['vec_table_present']}")
+        click.echo(f"Embedding model loadable: {report['embeddings_model_available']}")
+        click.echo(f"Nodes without embedding:  {report['nodes_missing_embeddings']}")
+        click.echo(f"Healthy:                  {report['is_healthy']}")
+    if not report["is_healthy"]:
+        ctx.exit(1)
+
+
+@cli.command("rebuild-fts")
+@click.pass_context
+def rebuild_fts_cmd(ctx: click.Context) -> None:
+    """Wipe and rebuild the FTS index from nodes."""
+    conn = ctx.obj["conn"]
+    indexed = rebuild_fts(conn)
+    click.echo(f"FTS rebuilt: {indexed} rows indexed.")
 
 
 @cli.command()

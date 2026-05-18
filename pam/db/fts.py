@@ -4,6 +4,7 @@ import re
 import sqlite3
 
 from pam.db.nodes import Node, row_to_node
+from pam.db.transaction import transaction
 
 
 MATCH_TERM_PATTERN = re.compile(r"\w+")
@@ -123,6 +124,19 @@ def fts_search_entities(
         },
     )
     return [row_to_node(row) for row in rows]
+
+
+def rebuild_fts(conn: sqlite3.Connection) -> int:
+    """Wipe and rebuild fts_index from nodes. Returns count indexed."""
+    with transaction(conn):
+        conn.execute("DELETE FROM fts_index")
+        conn.execute(
+            """
+            INSERT INTO fts_index(node_id, title, content, summary)
+            SELECT id, title, content, summary FROM nodes
+            """
+        )
+        return conn.execute("SELECT COUNT(*) FROM fts_index").fetchone()[0]
 
 
 __all__ = ["fts_search", "fts_search_entities"]

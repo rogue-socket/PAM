@@ -306,6 +306,46 @@ def check_database_health(conn: sqlite3.Connection) -> dict[str, int | bool]:
     }
 
 
+def doctor_report(conn: sqlite3.Connection) -> dict[str, object]:
+    """Operator-facing health snapshot. Wraps check_database_health with
+    schema version, SQLite integrity, and vector-channel coverage.
+    """
+    from pam.embeddings import is_available as embeddings_available
+
+    base = check_database_health(conn)
+    schema_version = get_current_version(conn)
+
+    integrity_row = conn.execute("PRAGMA integrity_check").fetchone()
+    integrity_result = integrity_row[0] if integrity_row else "unknown"
+    integrity_ok = integrity_result == "ok"
+
+    vec_table_present = bool(
+        conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='vec_node_map'"
+        ).fetchone()
+    )
+    nodes_missing_embeddings = 0
+    if vec_table_present:
+        nodes_missing_embeddings = _count_query(
+            conn,
+            """
+            SELECT COUNT(*) FROM nodes n
+            LEFT JOIN vec_node_map m ON m.node_id = n.id
+            WHERE m.node_id IS NULL
+            """,
+        )
+
+    report: dict[str, object] = dict(base)
+    report["schema_version"] = schema_version
+    report["integrity_check"] = integrity_result
+    report["integrity_ok"] = integrity_ok
+    report["vec_table_present"] = vec_table_present
+    report["embeddings_model_available"] = embeddings_available()
+    report["nodes_missing_embeddings"] = nodes_missing_embeddings
+    report["is_healthy"] = bool(report["is_healthy"]) and integrity_ok
+    return report
+
+
 def get_current_version(conn: sqlite3.Connection) -> int:
     row = conn.execute("SELECT MAX(version) FROM schema_version").fetchone()
     return row[0] or 0 if row else 0
