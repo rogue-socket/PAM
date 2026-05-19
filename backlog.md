@@ -6,6 +6,26 @@ When an item gets picked up, move it into a session doc or `audits/` / `test_fin
 
 ---
 
+## Eval / quality
+
+### Eval script preserves Claude's response text [next] <!-- from: handoffs/2026-05-19.md /wrap -->
+**Why:** today's detailed-eval per-flip diff (101/110 → 100/110) couldn't be triaged because the saved transcript JSON only stores `{index, query_type, query, answer, passed}` — no actual model output. Per `feedback_prompt_rule_vs_matcher_fn.md`, real eval methodology is per-flip text inspection; raw count alone is misleading. The 3 newly-failing cases (#43 / #63 / #78) are stuck at "unknown — could be matcher-FN, could be pick-variance, could be real" until the next run captures text.
+**How to apply:** in `scripts/run_copilot_cli_eval.py` add the Claude response to each transcript entry before serializing. Probably one extra field on the per-query dict. Verify by rerunning detailed and confirming the text shows up under `summary.transcript[i]`.
+
+### Graph-quality diagnostics + miss categorization [next] <!-- from: DEPENDABILITY_PLAN.md Phase 2 -->
+**Why:** Phase 2 item 3 from the dependability plan. A bad graph-native answer today reads as a single "miss" with no failure class — could be missing edge, missed expansion, weak ranking, weak rendering, or Claude pick-variance. As PAM moves more graph-native, this opacity is the bigger risk. Pairs naturally with the eval-transcript-preservation item above.
+**How to apply:** add a per-miss classifier to the eval harness that checks: (a) does retrieval return the gold node? (b) does graph expansion reach it? (c) does ranking surface it in top-k? (d) does rendering produce the right edge facts? Report per-class counts in the eval summary.
+
+---
+
+## Dependability
+
+### Telemetry-in-txn (Phase 1 closure) [next] <!-- from: handoffs/2026-05-19.md /wrap -->
+**Why:** Phase 1 left JSONL appends outside the SQLite transaction by design (per `docs/DEPENDABILITY_PLAN.md`: "telemetry is best-effort, not atomic"). Worth one focused commit to either (a) move appends inside the txn so log can't desync from partial failures, or (b) write a `decisions.md` entry making the best-effort stance durable. Today's plan leans toward (b) — the rationale is in the plan — but the call hasn't been made explicitly yet.
+**How to apply:** either thread an `append_log` into the transaction's success path in `relations.py`, `feedback.py`, `lifecycle.py`, OR add a one-paragraph `decisions.md` entry citing the plan and locking in best-effort semantics. Don't do both.
+
+---
+
 ## Architecture / roadmap
 
 ### True multi-hop graph traversal *(O7c)* <!-- from: docs/BACKLOG.md -->
