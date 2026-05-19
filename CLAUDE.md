@@ -8,7 +8,7 @@ PAM (Personal Agent Memory) is a local-first SQLite-backed memory system for per
 
 ## Commands
 
-There is no `pyproject.toml` / `requirements.txt` in the repo. Activate the project's conda env before running anything (per global Python rules). The repo uses `click` for the CLI and `pytest` for tests.
+Activate the project's conda env before running anything (per global Python rules). The repo uses `click` for the CLI and `pytest` for tests.
 
 CLI entry point (`cli.py` at repo root):
 
@@ -77,7 +77,7 @@ PAM uses a two-tier doc layout: agent-facing scaffolding at the repo root for fa
 - `decisions.md` — durable judgment calls and methodology, with **Why:** rationale per entry. Includes deferrals (decisions *not* to do something).
 - `glossary.md` — PAM-specific terms (kayo, IRL suite, F3, Q14/Q21/Q24/Q25, claude_code provider, workspace_id, etc.).
 - `backlog.md` — open work items with definition-of-done. Distinct from session-level Unresolved.
-- `audits/` — dated audit snapshots. The 2026-05-06 audit is the canonical one; new audits go here as `YYYY-MM-DD_HH-MM-SS_<slug>.md`.
+- `audits/` — dated audit snapshots. New audits go here as `YYYY-MM-DD_HH-MM-SS_<slug>.md`.
 - `test_findings/` — dated eval / test-run results. New eval reports go here.
 - `prds/` — point-in-time proposals (currently empty). Long-lived design plans stay in `docs/` instead — see decisions.md 2026-05-07.
 - `misc/` — worth-keeping notes that don't fit the four categories above.
