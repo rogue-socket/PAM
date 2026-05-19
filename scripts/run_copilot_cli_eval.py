@@ -335,16 +335,23 @@ def _prompt_for_answer(raw_query: str, retrieved_context: str) -> str:
         "- Do not ask clarifying questions. You already have the full question.\n"
         "- Base the final answer only on the PAM retrieval result below.\n"
         "- The PAM context is the user's own memory log. 'I', 'me', 'my', 'we', and 'us' in the context refer to the user; events like 'X shadowed me' or 'X reviewed my Z' are activities the user participated in.\n"
-        "- If the retrieval result does not support an answer, reply exactly with NO_ANSWER.\n"
+        "- If the question contains a premise that the retrieval result directly contradicts (e.g. attributes an action to the wrong person, places an event in the wrong environment, or asserts something happened that did not), correct the premise using only what the context says, then state the actual fact. Do not reply NO_ANSWER in this case — the context disproving the premise *is* the answer.\n"
+        "- Only reply NO_ANSWER when the retrieval result is truly silent on the topic — neither confirming nor refuting the question.\n"
         "- Output only the final answer text.\n\n"
         "PAM retrieval context:\n"
         f"{retrieved_context}"
     )
 
 
-def _run_copilot_query(raw_query: str, *, model: str, top_k: int, db_path: Path, log_path: Path) -> str:
-    retrieved_context = _retrieve_context(raw_query, top_k=top_k)
-
+def _run_copilot_query(
+    raw_query: str,
+    *,
+    retrieved_context: str,
+    model: str,
+    top_k: int,
+    db_path: Path,
+    log_path: Path,
+) -> str:
     command = [
         *_get_copilot_command_prefix(),
         "-p",
@@ -378,15 +385,21 @@ def _run_copilot_query(raw_query: str, *, model: str, top_k: int, db_path: Path,
     return stdout
 
 
-def _run_claude_query(raw_query: str, *, model: str, top_k: int, db_path: Path, log_path: Path) -> str:
+def _run_claude_query(
+    raw_query: str,
+    *,
+    retrieved_context: str,
+    model: str,
+    top_k: int,
+    db_path: Path,
+    log_path: Path,
+) -> str:
     """Eval via Claude Code CLI (`claude -p`).
 
     Same retrieval + prompt as Copilot; only the binary and the flag set
     differ. Output format is plain text so the answer-pass matcher works
     unchanged.
     """
-    retrieved_context = _retrieve_context(raw_query, top_k=top_k)
-
     command = [
         *_get_claude_command_prefix(),
         "-p",
@@ -420,15 +433,30 @@ def _run_backend_query(
     backend: str,
     raw_query: str,
     *,
+    retrieved_context: str,
     model: str,
     top_k: int,
     db_path: Path,
     log_path: Path,
 ) -> str:
     if backend == "copilot":
-        return _run_copilot_query(raw_query, model=model, top_k=top_k, db_path=db_path, log_path=log_path)
+        return _run_copilot_query(
+            raw_query,
+            retrieved_context=retrieved_context,
+            model=model,
+            top_k=top_k,
+            db_path=db_path,
+            log_path=log_path,
+        )
     if backend == "claude":
-        return _run_claude_query(raw_query, model=model, top_k=top_k, db_path=db_path, log_path=log_path)
+        return _run_claude_query(
+            raw_query,
+            retrieved_context=retrieved_context,
+            model=model,
+            top_k=top_k,
+            db_path=db_path,
+            log_path=log_path,
+        )
     raise ValueError(f"unknown backend: {backend!r}")
 
 
@@ -450,6 +478,64 @@ def _canonicalize_match_text(text: str) -> str:
 
 
 _TERSE_ANSWER_MIN_TOKENS = 2
+
+
+_MISS_CLASSES = (
+    "subprocess_error",
+    "false_positive",
+    "retrieval_miss",
+    "partial_surface",
+    "pick_miss",
+)
+
+
+def _classify_miss(
+    query_case: dict,
+    *,
+    retrieved_context: str,
+    answer: str,
+    error_message: str | None,
+) -> str:
+    """Assign a coarse failure class to a missed query.
+
+    Uses the data the eval already has — `expected_substrings` from the
+    fixture and `retrieved_context` from the live retrieval — so no fixture
+    augmentation or per-stage retrieval instrumentation is required. The
+    five classes are coarse on purpose:
+
+    - `subprocess_error`: the backend CLI errored before producing an answer.
+    - `false_positive`: `expect_empty=True` queries where the model fabricated
+      an answer instead of returning NO_ANSWER.
+    - `retrieval_miss`: none of the expected substrings appear in the rendered
+      PAM context. The model literally could not have answered correctly —
+      PAM didn't surface the right content. Collapses the per-stage
+      "retrieval / expansion / ranking / rendering" distinction the
+      DEPENDABILITY_PLAN calls for; separating those needs stage-by-stage
+      retrieval instrumentation or gold node IDs in fixtures.
+    - `partial_surface`: some but not all expected substrings present. The
+      model had a fragment to work with but not the full picture. Ambiguous
+      between retrieval-side undercoverage and pick-side weak chaining.
+    - `pick_miss`: all expected substrings present in context, but the model
+      picked the wrong answer. PAM did its job; the model didn't.
+    """
+    if error_message is not None:
+        return "subprocess_error"
+    if query_case.get("expect_empty"):
+        return "false_positive"
+
+    expected = [s for s in query_case.get("expected_substrings", []) if s]
+    if not expected:
+        return "pick_miss"
+
+    canonical_context = _canonicalize_match_text(retrieved_context)
+    matches = sum(
+        1 for s in expected if _canonicalize_match_text(s) in canonical_context
+    )
+    if matches == 0:
+        return "retrieval_miss"
+    if matches < len(expected):
+        return "partial_surface"
+    return "pick_miss"
 
 
 def _answer_passes(answer: str, query_case: dict) -> bool:
@@ -521,6 +607,7 @@ def _evaluate_queries(
         "query_type_hits": {},
         "query_type_totals": {},
         "misses": [],
+        "miss_classes": {cls: 0 for cls in _MISS_CLASSES},
         "transcript": [],
     }
 
@@ -548,10 +635,16 @@ def _evaluate_queries(
         _log(f"[eval] [{index}/{total_queries}] ({query_type}) {short_query}...")
 
         error_message = None
+        # Resolve retrieved_context up front so the transcript can preserve it
+        # even when the backend subprocess errors. Per-flip triage needs to
+        # distinguish retrieval-miss (gold not in context) from pick-miss
+        # (gold in context but model didn't surface it).
+        retrieved_context = _retrieve_context(query_case["query"], top_k=top_k)
         try:
             answer = _run_backend_query(
                 backend,
                 query_case["query"],
+                retrieved_context=retrieved_context,
                 model=model,
                 top_k=top_k,
                 db_path=db_path,
@@ -568,12 +661,21 @@ def _evaluate_queries(
             _log(f"[eval] [{index}/{total_queries}] => PASS")
         else:
             short_answer = _normalize_answer_text(answer)[:120]
-            _log(f"[eval] [{index}/{total_queries}] => MISS  answer={short_answer}")
+            miss_class = _classify_miss(
+                query_case,
+                retrieved_context=retrieved_context,
+                answer=answer,
+                error_message=error_message,
+            )
+            summary["miss_classes"][miss_class] += 1
+            _log(f"[eval] [{index}/{total_queries}] => MISS  class={miss_class}  answer={short_answer}")
             miss = {
                 "index": index,
                 "query_type": query_type,
                 "query": query_case["query"],
                 "answer": answer,
+                "retrieved_context": retrieved_context,
+                "miss_class": miss_class,
             }
             if error_message is not None:
                 miss["error"] = error_message
@@ -584,8 +686,11 @@ def _evaluate_queries(
             "query_type": query_type,
             "query": query_case["query"],
             "answer": answer,
+            "retrieved_context": retrieved_context,
             "passed": passed,
         }
+        if not passed:
+            entry["miss_class"] = miss_class
         if error_message is not None:
             entry["error"] = error_message
         summary["transcript"].append(entry)
@@ -607,6 +712,9 @@ def _evaluate_queries(
         summary["overall_score"] = summary["overall_hits"] / summary["overall_total"] * 100.0
 
     _log(f"[eval] done: {summary['overall_hits']}/{summary['overall_total']} = {summary['overall_score']:.1f}%")
+    non_zero_classes = {k: v for k, v in summary["miss_classes"].items() if v}
+    if non_zero_classes:
+        _log(f"[eval] miss classes: {json.dumps(non_zero_classes)}")
     return summary
 
 
