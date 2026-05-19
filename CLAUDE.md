@@ -60,7 +60,7 @@ Top-level layout:
 
 ### Retrieval result contract
 
-`RetrievalResult` (see `pam/retrieval/ranker.py`) exposes node buckets (`events`, `entities`, `notes`, `sources`), `relationships`, `conflicts`, `superseded`, `edge_facts`, `graph_explanations`, `session_groups`, `query_meta`, `ordered_nodes`, `score_components`. CLI/agent renderers should use these fields explicitly rather than flattening into prose. `score_components[node_id]` carries the post-weight `{text_relevance, recency, importance, entity_bonus}` breakdown for each surfaced node — the four entries sum exactly to the rank-key.
+`RetrievalResult` (see `pam/retrieval/ranker.py`) exposes node buckets (`events`, `entities`, `notes`, `sources`), `relationships`, `conflicts`, `superseded`, `edge_facts`, `graph_explanations`, `session_groups`, `query_meta`, `ordered_nodes`, `score_components`. CLI/agent renderers should use these fields explicitly rather than flattening into prose. `score_components[node_id]` carries the post-weight `{text_relevance, vector_similarity, recency, importance, entity_bonus}` breakdown for each surfaced node, plus an optional `derived_propagation` entry when the `DERIVED_FROM` score-propagation path fires (`_propagate_along_derived_from` in `ranker.py`). The components sum exactly to the rank-key — the contract is "components sum to total," not "weights sum to 1.0."
 
 ## Working rules from `.github/copilot-instructions.md`
 
@@ -91,3 +91,9 @@ PAM uses a two-tier doc layout: agent-facing scaffolding at the repo root for fa
 - `docs/EVAL_SUITES.md` — the five eval corpora and what a miss in each tells you.
 - `docs/TESTING.md` — how to run unit + eval suites.
 - `docs/DOCUMENTATION_COVERAGE.md` — file-to-doc mapping. When you add/rename/remove a maintained file, update the relevant module doc and this coverage matrix.
+
+## Session docs
+
+- `handoffs/*` - folder with dated handoff files
+- `backlog.md` — living TODO. Tags: `[active]`, `[next]`, `[blocked: <reason>]`, no tag = someday.
+- Both gitignored.
