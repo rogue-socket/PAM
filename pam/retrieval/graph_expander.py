@@ -40,6 +40,15 @@ class ExpandedPath:
     score: float = 0.0
 
 
+def _cached_get_node(conn: sqlite3.Connection, cache: dict[str, Node | None], node_id: str) -> Node | None:
+    """Memoize get_node() calls inside a single expand() invocation. The hot
+    loops below re-fetch the same entity/bridge nodes many times across
+    candidate iterations; one query per unique id is enough."""
+    if node_id not in cache:
+        cache[node_id] = get_node(conn, node_id)
+    return cache[node_id]
+
+
 def _record_edge_fact(edge_facts: dict[tuple[str, str], str], source_id: str, target_id: str, fact: str) -> None:
     if fact:
         edge_facts[(source_id, target_id)] = fact
@@ -134,10 +143,11 @@ def _expand_outgoing_relation(
     edge_facts: dict[tuple[str, str], str],
     support_paths: list[ExpandedPath],
     seen_support_paths: set[tuple],
+    node_cache: dict[str, Node | None],
     allow_reference: bool = False,
 ) -> None:
     for edge in _weighted_edges(get_edges_from(conn, node_id, relation=relation)):
-        target = get_node(conn, edge.target_id)
+        target = _cached_get_node(conn, node_cache, edge.target_id)
         if not _is_surfaceable(target, allow_reference=allow_reference):
             continue
 
@@ -176,6 +186,7 @@ def _expand_requested_relationships(
     edge_facts: dict[tuple[str, str], str],
     support_paths: list[ExpandedPath],
     seen_support_paths: set[tuple],
+    node_cache: dict[str, Node | None],
 ) -> None:
     if not parsed.relation_filters:
         return
@@ -190,7 +201,7 @@ def _expand_requested_relationships(
                     continue
 
                 allow_reference = edge.relation == "SUPERSEDES"
-                target = get_node(conn, edge.target_id)
+                target = _cached_get_node(conn, node_cache, edge.target_id)
                 if not _is_surfaceable(target, allow_reference=allow_reference):
                     continue
 
@@ -224,7 +235,7 @@ def _expand_requested_relationships(
                 if edge.relation not in requested_relations:
                     continue
 
-                source = get_node(conn, edge.source_id)
+                source = _cached_get_node(conn, node_cache, edge.source_id)
                 if not _is_surfaceable(source):
                     continue
 
@@ -263,6 +274,7 @@ def expand(conn: sqlite3.Connection, candidates: list[Node], parsed: ParsedQuery
     support_paths: list[ExpandedPath] = []
     seen_support_paths: set[tuple] = set()
     parsed_entities = {entity.lower() for entity in parsed.entities}
+    node_cache: dict[str, Node | None] = {node.id: node for node in candidates}
 
     _expand_requested_relationships(
         conn,
@@ -273,13 +285,14 @@ def expand(conn: sqlite3.Connection, candidates: list[Node], parsed: ParsedQuery
         edge_facts,
         support_paths,
         seen_support_paths,
+        node_cache,
     )
 
     for node in candidates:
         edges_out = get_edges_from(conn, node.id, relation="REFERS_TO")
         for edge in _weighted_edges(edges_out):
 
-            target = get_node(conn, edge.target_id)
+            target = _cached_get_node(conn, node_cache, edge.target_id)
             if target is None or target.type != "entity":
                 continue
 
@@ -300,7 +313,7 @@ def expand(conn: sqlite3.Connection, candidates: list[Node], parsed: ParsedQuery
             has_related_support = False
             for reverse_edge in _weighted_edges(reverse_edges):
 
-                related = get_node(conn, reverse_edge.source_id)
+                related = _cached_get_node(conn, node_cache, reverse_edge.source_id)
                 if not _is_surfaceable(related):
                     continue
                 if related.id == node.id:
@@ -345,7 +358,7 @@ def expand(conn: sqlite3.Connection, candidates: list[Node], parsed: ParsedQuery
 
             if _should_expand_related_concepts(parsed):
                 for entity_edge in _weighted_edges(get_edges_from(conn, target.id, relation="RELATED")):
-                    related_entity = get_node(conn, entity_edge.target_id)
+                    related_entity = _cached_get_node(conn, node_cache, entity_edge.target_id)
                     if related_entity is None or related_entity.type != "entity" or not _is_traversable(related_entity):
                         continue
 
@@ -353,7 +366,7 @@ def expand(conn: sqlite3.Connection, candidates: list[Node], parsed: ParsedQuery
                     related_entity_edges = get_edges_to(conn, related_entity.id, relation="REFERS_TO")
                     has_chain_support = False
                     for related_entity_edge in _weighted_edges(related_entity_edges):
-                        related_node = get_node(conn, related_entity_edge.source_id)
+                        related_node = _cached_get_node(conn, node_cache, related_entity_edge.source_id)
                         if not _is_surfaceable(related_node):
                             continue
                         if related_node.id == node.id:
@@ -482,6 +495,7 @@ def expand(conn: sqlite3.Connection, candidates: list[Node], parsed: ParsedQuery
             edge_facts=edge_facts,
             support_paths=support_paths,
             seen_support_paths=seen_support_paths,
+            node_cache=node_cache,
         )
         _expand_outgoing_relation(
             conn,
@@ -493,6 +507,7 @@ def expand(conn: sqlite3.Connection, candidates: list[Node], parsed: ParsedQuery
             edge_facts=edge_facts,
             support_paths=support_paths,
             seen_support_paths=seen_support_paths,
+            node_cache=node_cache,
             allow_reference=True,
         )
 
@@ -508,6 +523,7 @@ def expand(conn: sqlite3.Connection, candidates: list[Node], parsed: ParsedQuery
                 edge_facts=edge_facts,
                 support_paths=support_paths,
                 seen_support_paths=seen_support_paths,
+                node_cache=node_cache,
             )
 
     return ExpandedResult(

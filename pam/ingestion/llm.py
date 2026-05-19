@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 
 from config import (
     ENTITY_CATEGORIES,
     LLM_CLAUDE_CODE_MODEL,
     LLM_INGESTION_MODEL,
+    LLM_INGESTION_OPENAI_MODEL,
     LLM_PROVIDER,
     LLM_TIMEOUT_SECONDS,
     MAX_ENTITIES_PER_INGESTION,
@@ -85,7 +85,7 @@ def _call_llm(prompt: str) -> str:
 
         client = OpenAI(timeout=LLM_TIMEOUT_SECONDS)
         response = client.responses.create(
-            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+            model=LLM_INGESTION_OPENAI_MODEL,
             input=prompt,
             temperature=0,
         )

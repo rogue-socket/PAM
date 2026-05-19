@@ -73,5 +73,7 @@ LLM_TIMEOUT_SECONDS = int(os.getenv("PAM_LLM_TIMEOUT_SECONDS", "30"))
 # uses sonnet via the Copilot CLI, which expects the dot-form ID.
 LLM_INGESTION_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5")
 LLM_QUERY_PARSER_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5")
+LLM_INGESTION_OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+LLM_QUERY_PARSER_OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 LLM_CLAUDE_CODE_MODEL = os.getenv("CLAUDE_CODE_MODEL", "claude-haiku-4-5")
 CHAT_ANSWER_MODEL = os.getenv("PAM_CHAT_ANSWER_MODEL", "claude-sonnet-4.5")

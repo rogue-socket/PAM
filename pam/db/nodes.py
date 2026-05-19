@@ -219,13 +219,14 @@ def delete_node(conn: sqlite3.Connection, node_id: str, *, commit: bool = True) 
 def list_nodes(
     conn: sqlite3.Connection,
     type: str | None = None,
-    status: str | None = None,
+    status: str | tuple[str, ...] | list[str] | None = None,
     session_id: str | None = None,
     workspace_id: str | None = None,
     since: datetime | None = None,
     limit: int | None = 100,
 ) -> list[Node]:
-    """Filter and list nodes. 'since' filters on valid_at."""
+    """Filter and list nodes. 'since' filters on valid_at. 'status' accepts a
+    single value or a sequence (rendered as SQL `IN (...)`)."""
     clauses: list[str] = []
     params: list[object] = []
 
@@ -233,8 +234,13 @@ def list_nodes(
         clauses.append("type = ?")
         params.append(type)
     if status is not None:
-        clauses.append("status = ?")
-        params.append(status)
+        if isinstance(status, (list, tuple)):
+            placeholders = ", ".join("?" * len(status))
+            clauses.append(f"status IN ({placeholders})")
+            params.extend(status)
+        else:
+            clauses.append("status = ?")
+            params.append(status)
     if session_id is not None:
         clauses.append("session_id = ?")
         params.append(session_id)

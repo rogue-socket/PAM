@@ -390,6 +390,29 @@ class RetrievalModuleTests(unittest.TestCase):
         results = fts_search_with_filter(self.conn, parsed, workspace_id=resolve_workspace_id())
         self.assertEqual(results, [])
 
+    def test_fts_search_time_range_fallback_skipped_when_intent_is_lookup_with_keywords(self) -> None:
+        """Lookup queries that happen to mention a date should not be hijacked into a
+        date-range scan when the keywords miss FTS. The time-range fallback fires only
+        when intent is explicitly "timeline" OR the parsed query has no keywords at all.
+        Regression test for the search.py dead-guard fix (audit 2026-05-19)."""
+        create_node(
+            self.conn,
+            make_node(
+                title="Mentoring 1:1 with Diego",
+                content="paired on a real bug",
+                valid_at=datetime(2026, 4, 29, 14, 0, tzinfo=timezone.utc),
+            ),
+        )
+
+        parsed = ParsedQuery(
+            keywords=["nonexistent_token_xyz"],
+            entities=[],
+            time_range={"start": "2026-04-27T00:00:00+00:00", "end": "2026-05-04T23:59:59+00:00"},
+            intent="lookup",
+        )
+        results = fts_search_with_filter(self.conn, parsed, workspace_id=resolve_workspace_id())
+        self.assertEqual(results, [])
+
     def test_fts_search_returns_matching_node(self) -> None:
         matching_id = create_node(self.conn, make_node(title="Alpha retrieval", content="pipeline", summary="fts"))
         create_node(self.conn, make_node(title="Beta unrelated", content="other", summary="none"))

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import sqlite3
 from datetime import datetime
 from math import exp
@@ -12,7 +11,7 @@ from pam.db.nodes import Node, bulk_update_importance, get_node, list_nodes, upd
 from pam.db.schema import utcnow, utcnow_iso
 
 
-ELIGIBLE_STATUSES = {"active", "draft", "reference"}
+ELIGIBLE_STATUSES = ("active", "draft", "reference")
 
 
 def _append_log(payload: dict) -> None:
@@ -35,7 +34,7 @@ def compute_decayed_importance(node: Node, now: datetime) -> float:
 
 
 def _eligible_nodes(conn: sqlite3.Connection) -> list[Node]:
-    return [node for node in list_nodes(conn, limit=None) if node.status in ELIGIBLE_STATUSES]
+    return list_nodes(conn, status=ELIGIBLE_STATUSES, limit=None)
 
 
 def _plan_decay_updates(nodes: list[Node], now: datetime) -> tuple[list[tuple[str, float]], int]:
@@ -105,6 +104,14 @@ def unarchive(conn: sqlite3.Connection, node_id: str) -> bool:
         return False
 
     update_node(conn, node_id, status="active", importance=IMPORTANCE_DEFAULT)
+    _append_log(
+        {
+            "event": "unarchive",
+            "node_id": node_id,
+            "old_importance": node.importance,
+            "restored_importance": IMPORTANCE_DEFAULT,
+        }
+    )
     return True
 
 

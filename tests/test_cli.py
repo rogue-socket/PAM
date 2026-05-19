@@ -16,7 +16,8 @@ from pam.agent_interface import format_for_context_window, ingest_for_agent, que
 import pam.chat_agent as chat_agent_module
 from pam.chat_agent import ChatResponse
 from pam.db.edges import Edge, create_edge
-from pam.db.nodes import Node, create_node
+from pam.db.edges import get_edges_from
+from pam.db.nodes import Node, create_node, get_node
 from pam.db.schema import get_connection, initialize
 from pam.retrieval.ranker import GraphExplanation, GraphPathSegment, RetrievalResult
 
@@ -529,6 +530,117 @@ class CliModuleTests(unittest.TestCase):
         self.assertIn('Metadata:     {"url": "https://docs.example.com/cli"}', output)
         self.assertIn("Summary: stored summary", output)
         self.assertIn("Content:\nstored content", output)
+
+    def test_upvote_cmd_raises_importance(self) -> None:
+        conn = get_connection(self.db_path)
+        node_id = create_node(conn, make_node(importance=0.5))
+        conn.close()
+
+        result = self.runner.invoke(cli_module.cli, ["upvote", node_id])
+
+        self.assertEqual(result.exit_code, 0, get_cli_output(result))
+        conn = get_connection(self.db_path)
+        self.assertAlmostEqual(get_node(conn, node_id).importance, 0.6)
+        conn.close()
+
+    def test_downvote_cmd_lowers_importance(self) -> None:
+        conn = get_connection(self.db_path)
+        node_id = create_node(conn, make_node(importance=0.5))
+        conn.close()
+
+        result = self.runner.invoke(cli_module.cli, ["downvote", node_id])
+
+        self.assertEqual(result.exit_code, 0, get_cli_output(result))
+        conn = get_connection(self.db_path)
+        self.assertAlmostEqual(get_node(conn, node_id).importance, 0.4)
+        conn.close()
+
+    def test_pin_cmd_sets_importance_to_max(self) -> None:
+        conn = get_connection(self.db_path)
+        node_id = create_node(conn, make_node(importance=0.3))
+        conn.close()
+
+        result = self.runner.invoke(cli_module.cli, ["pin", node_id])
+
+        self.assertEqual(result.exit_code, 0, get_cli_output(result))
+        conn = get_connection(self.db_path)
+        self.assertEqual(get_node(conn, node_id).importance, 1.0)
+        conn.close()
+
+    def test_supersede_cmd_writes_supersedes_edge(self) -> None:
+        conn = get_connection(self.db_path)
+        old_id = create_node(conn, make_node(title="Old fact", importance=0.8))
+        new_id = create_node(conn, make_node(title="New fact", importance=0.5))
+        conn.close()
+
+        result = self.runner.invoke(cli_module.cli, ["supersede", old_id, new_id])
+
+        self.assertEqual(result.exit_code, 0, get_cli_output(result))
+        conn = get_connection(self.db_path)
+        edges = get_edges_from(conn, new_id, relation="SUPERSEDES")
+        self.assertEqual([e.target_id for e in edges], [old_id])
+        # Old node's importance should be dampened (apply_supersedes multiplies
+        # by SUPERSEDE_IMPORTANCE_FACTOR=0.5).
+        self.assertAlmostEqual(get_node(conn, old_id).importance, 0.4)
+        conn.close()
+
+    def test_unarchive_cmd_restores_archived_node(self) -> None:
+        conn = get_connection(self.db_path)
+        node_id = create_node(conn, make_node(status="archived", importance=0.05))
+        conn.close()
+
+        result = self.runner.invoke(cli_module.cli, ["unarchive", node_id])
+
+        self.assertEqual(result.exit_code, 0, get_cli_output(result))
+        conn = get_connection(self.db_path)
+        restored = get_node(conn, node_id)
+        self.assertEqual(restored.status, "active")
+        self.assertEqual(restored.importance, 0.5)
+        conn.close()
+
+    def test_decay_cmd_runs_and_prints_summary(self) -> None:
+        conn = get_connection(self.db_path)
+        create_node(conn, make_node(importance=0.5))
+        conn.close()
+
+        with mock.patch("cli.click.echo") as echo_mock:
+            result = self.runner.invoke(cli_module.cli, ["decay"])
+        output = "\n".join(call.args[0] if call.args else "" for call in echo_mock.call_args_list)
+
+        self.assertEqual(result.exit_code, 0, output)
+        self.assertIn("Processed:", output)
+        self.assertIn("Decayed:", output)
+        self.assertIn("Archived:", output)
+
+    def test_rebuild_fts_cmd_reports_indexed_count(self) -> None:
+        conn = get_connection(self.db_path)
+        create_node(conn, make_node(title="alpha"))
+        create_node(conn, make_node(title="beta"))
+        conn.close()
+
+        with mock.patch("cli.click.echo") as echo_mock:
+            result = self.runner.invoke(cli_module.cli, ["rebuild-fts"])
+        output = "\n".join(call.args[0] if call.args else "" for call in echo_mock.call_args_list)
+
+        self.assertEqual(result.exit_code, 0, output)
+        self.assertIn("FTS rebuilt: 2 rows indexed.", output)
+
+    def test_list_cmd_filters_by_type_and_status(self) -> None:
+        conn = get_connection(self.db_path)
+        note_id = create_node(conn, make_node(node_type="note", title="Active note"))
+        entity_id = create_node(conn, make_node(node_type="entity", title="Active entity"))
+        archived_entity_id = create_node(conn, make_node(node_type="entity", title="Old entity", status="archived"))
+        conn.close()
+
+        with mock.patch("cli.click.echo") as echo_mock:
+            result = self.runner.invoke(cli_module.cli, ["list", "--type", "entity", "--status", "active"])
+        output = "\n".join(call.args[0] if call.args else "" for call in echo_mock.call_args_list)
+
+        self.assertEqual(result.exit_code, 0, output)
+        # format_node_summary renders id[:8], so assert on the short prefix.
+        self.assertIn(entity_id[:8], output)
+        self.assertNotIn(note_id[:8], output)
+        self.assertNotIn(archived_entity_id[:8], output)
 
     def test_graph_lists_incoming_and_outgoing_edges(self) -> None:
         conn = get_connection(self.db_path)

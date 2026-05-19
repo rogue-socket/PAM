@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import sqlite3
 
 from config import (
@@ -26,10 +25,6 @@ def _append_log(payload: dict) -> None:
 
     record = {"ts": utcnow_iso(), **payload}
     append_log_line(LOG_PATH, record)
-
-
-def _get_feedback_node(conn: sqlite3.Connection, node_id: str) -> Node | None:
-    return get_node(conn, node_id)
 
 
 def _update_importance_with_log(
@@ -58,7 +53,7 @@ def upvote(
     node_id: str,
     edge_ids: list[tuple[str, str, str]] | None = None,
 ) -> bool:
-    node = _get_feedback_node(conn, node_id)
+    node = get_node(conn, node_id)
     if not node:
         return False
 
@@ -82,7 +77,7 @@ def upvote(
 
 
 def downvote(conn: sqlite3.Connection, node_id: str) -> bool:
-    node = _get_feedback_node(conn, node_id)
+    node = get_node(conn, node_id)
     if not node:
         return False
 
@@ -98,7 +93,7 @@ def downvote(conn: sqlite3.Connection, node_id: str) -> bool:
 
 
 def pin(conn: sqlite3.Connection, node_id: str) -> bool:
-    node = _get_feedback_node(conn, node_id)
+    node = get_node(conn, node_id)
     if not node:
         return False
 
@@ -113,8 +108,8 @@ def pin(conn: sqlite3.Connection, node_id: str) -> bool:
 
 
 def supersede(conn: sqlite3.Connection, new_node_id: str, old_node_id: str) -> bool:
-    new_node = _get_feedback_node(conn, new_node_id)
-    old_node = _get_feedback_node(conn, old_node_id)
+    new_node = get_node(conn, new_node_id)
+    old_node = get_node(conn, old_node_id)
     if not new_node or not old_node:
         return False
     if new_node.type not in SUPERSEDE_TYPES or old_node.type not in SUPERSEDE_TYPES:
