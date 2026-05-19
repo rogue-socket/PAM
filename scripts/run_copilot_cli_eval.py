@@ -468,12 +468,42 @@ def _normalize_answer_text(answer: str) -> str:
     return normalized
 
 
+# Universal canonicalization rules only — never add per-query phrase
+# substitutions here (see decisions.md 2026-05-19 matcher-canonicalization
+# entry). Contractions are perfectly equivalent to their expansions in
+# English, so expanding them is a language-level rule, not a fixture hack.
+_CONTRACTIONS = (
+    ("won't", "will not"),
+    ("can't", "cannot"),
+    ("shan't", "shall not"),
+    ("n't", " not"),  # didn't, doesn't, don't, isn't, wasn't, weren't, hadn't, haven't, hasn't, wouldn't, couldn't, shouldn't, ...
+    ("'re", " are"),
+    ("'ve", " have"),
+    ("'ll", " will"),
+    ("'d", " would"),
+    ("'m", " am"),
+    ("it's", "it is"),
+    ("that's", "that is"),
+    ("there's", "there is"),
+    ("what's", "what is"),
+    ("who's", "who is"),
+    ("let's", "let us"),
+)
+
+
+def _expand_contractions(text: str) -> str:
+    for short, long in _CONTRACTIONS:
+        text = text.replace(short, long)
+    return text
+
+
 def _canonicalize_match_text(text: str) -> str:
     canonical = _normalize_answer_text(text).lower()
     # Strip inline markdown emphasis that LLM answers tend to wrap around code
     # tokens (`--json`, `valid_at`) and bold key terms (**source**). These are
     # presentation, not content, but they break naive substring matching.
     canonical = canonical.replace("`", "").replace("**", "").replace("__", "")
+    canonical = _expand_contractions(canonical)
     canonical = re.sub(r"(\d)\s+([a-z%]+)\b", r"\1\2", canonical)
     return canonical
 

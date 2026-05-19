@@ -307,6 +307,32 @@ class CopilotCliEvalHarnessTests(unittest.TestCase):
         case = {"expected_substrings": ["File ingestion defaults to source nodes"]}
         self.assertTrue(eval_module._answer_passes("File ingestion defaults to **source** nodes", case))
 
+    def test_answer_passes_expands_contractions_so_didnt_matches_did_not(self) -> None:
+        """Universal canonicalization rule: contractions in the answer must match
+        their expanded form in expected_substrings (and vice versa). This is
+        language-level equivalence, not a per-fixture hack — `didn't` and `did
+        not` mean exactly the same thing in every English sentence.
+
+        Origin: IRL idx 17 (Diego/auth wrong-premise) failed when Claude wrote
+        "Diego didn't decide anything" against expected "did not decide".
+        """
+        case = {"expected_substrings": ["did not decide"]}
+        self.assertTrue(eval_module._answer_passes("Diego didn't decide anything", case))
+        # Reverse direction: contraction in expected, expansion in answer.
+        case_reverse = {"expected_substrings": ["didn't ship"]}
+        self.assertTrue(eval_module._answer_passes("We did not ship the cache fix", case_reverse))
+        # Other common contractions land too.
+        for answer, expected in [
+            ("we won't refactor that", "will not"),
+            ("she can't review today", "cannot"),
+            ("they're shadowing", "they are shadowing"),
+            ("it's an RFC", "it is an rfc"),
+        ]:
+            self.assertTrue(
+                eval_module._answer_passes(answer, {"expected_substrings": [expected]}),
+                f"{answer!r} should match {expected!r}",
+            )
+
     def test_eval_paths_recreates_only_requested_suite_directory(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_root = Path(temp_dir)
