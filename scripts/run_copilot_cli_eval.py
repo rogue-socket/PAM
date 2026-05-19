@@ -337,6 +337,7 @@ def _prompt_for_answer(raw_query: str, retrieved_context: str) -> str:
         "- The PAM context is the user's own memory log. 'I', 'me', 'my', 'we', and 'us' in the context refer to the user; events like 'X shadowed me' or 'X reviewed my Z' are activities the user participated in.\n"
         "- If the question contains a premise that the retrieval result directly contradicts (e.g. attributes an action to the wrong person, places an event in the wrong environment, or asserts something happened that did not), correct the premise using only what the context says, then state the actual fact. Do not reply NO_ANSWER in this case — the context disproving the premise *is* the answer.\n"
         "- Only reply NO_ANSWER when the retrieval result is truly silent on the topic — neither confirming nor refuting the question.\n"
+        "- If the question asks about a relative time window (e.g. 'last week', 'yesterday') and no retrieved item falls inside that window, do not reply NO_ANSWER. Instead, summarize the most recent retrieved activity and explicitly note that nothing falls in the literal window.\n"
         "- Output only the final answer text.\n\n"
         "PAM retrieval context:\n"
         f"{retrieved_context}"

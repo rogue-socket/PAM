@@ -126,11 +126,11 @@ def _time_range_seed_candidates(
     end = time_range.get("end")
     if not start and not end:
         return []
-    if parsed.intent != "timeline" and not parsed.keywords:
+    if parsed.intent != "timeline" and parsed.keywords:
         # Avoid hijacking lookup queries that happen to mention a date.
         # Fire only when intent is explicitly timeline OR there are no keywords
         # at all (every other path has already failed).
-        pass
+        return []
 
     clauses = ["status IN ('active', 'draft', 'reference')"]
     params: list[object] = []
@@ -147,7 +147,24 @@ def _time_range_seed_candidates(
     params.append(FTS_CANDIDATE_LIMIT)
     query = f"SELECT * FROM nodes WHERE {' AND '.join(clauses)} ORDER BY valid_at DESC, importance DESC LIMIT ?"
     rows = conn.execute(query, params).fetchall()
-    return [(row_to_node(row), -30.0) for row in rows]
+    if rows:
+        return [(row_to_node(row), -30.0) for row in rows]
+
+    if not parsed.time_range_relative:
+        return []
+
+    fallback_clauses = ["status IN ('active', 'draft', 'reference')"]
+    fallback_params: list[object] = []
+    if workspace_id is not None:
+        fallback_clauses.append("workspace_id = ?")
+        fallback_params.append(workspace_id)
+    fallback_params.append(FTS_CANDIDATE_LIMIT)
+    fallback_query = (
+        f"SELECT * FROM nodes WHERE {' AND '.join(fallback_clauses)} "
+        "ORDER BY valid_at DESC, importance DESC LIMIT ?"
+    )
+    fallback_rows = conn.execute(fallback_query, fallback_params).fetchall()
+    return [(row_to_node(row), -35.0) for row in fallback_rows]
 
 
 def _merge_candidates(seed_candidates: list[tuple], fts_candidates: list[tuple]) -> list[tuple]:

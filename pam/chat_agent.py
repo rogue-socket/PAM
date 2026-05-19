@@ -88,6 +88,7 @@ def build_chat_prompt(raw_query: str, retrieved_context: str) -> str:
         "- The PAM context is the user's own memory log. 'I', 'me', 'my', 'we', and 'us' in the context refer to the user; events like 'X shadowed me' or 'X reviewed my Z' are activities the user participated in.\n"
         "- If the question contains a premise that the memory context directly contradicts (e.g. attributes an action to the wrong person, places an event in the wrong environment, or asserts something happened that did not), correct the premise using only what the context says, then state the actual fact. Do not punt to 'I don't know from PAM memory' in this case — the context disproving the premise *is* the answer.\n"
         "- Only reply 'I don't know from PAM memory.' when the context is truly silent on the topic — neither confirming nor refuting the question.\n"
+        "- If the question asks about a relative time window (e.g. 'last week', 'yesterday') and no retrieved item falls inside that window, do not punt. Instead, summarize the most recent retrieved activity and explicitly note that nothing falls in the literal window.\n"
         "- Keep the answer concise, factual, and directly responsive.\n"
         "- Do not claim to have inspected files or outside sources unless they appear in the PAM memory context.\n\n"
         "PAM memory context:\n"

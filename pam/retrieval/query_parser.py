@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import re
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta, timezone
@@ -12,6 +11,7 @@ from config import (
     LLM_CLAUDE_CODE_MODEL,
     LLM_PROVIDER,
     LLM_QUERY_PARSER_MODEL,
+    LLM_QUERY_PARSER_OPENAI_MODEL,
     LLM_TIMEOUT_SECONDS,
 )
 from pam.llm_clients import (
@@ -199,6 +199,7 @@ class ParsedQuery:
     answer_mode: Literal["node", "relationship"] = "node"
     question_shape: Literal["lookup", "relationship", "influence", "evolution", "theme", "gap"] = "lookup"
     anchor_terms: list[str] = field(default_factory=list)
+    time_range_relative: bool = False
 
 
 def _extract_keywords(query: str) -> list[str]:
@@ -263,6 +264,24 @@ def _parse_date_token(value: str) -> date | None:
 
 
 def _extract_time_range(query: str, today: date) -> dict[str, str | None] | None:
+    """Return absolute time window or None.
+
+    For the relative-vs-absolute distinction used by the empty-window
+    fallback in search, callers should use `_extract_time_range_with_meta`.
+    """
+    result, _ = _extract_time_range_with_meta(query, today)
+    return result
+
+
+def _extract_time_range_with_meta(
+    query: str, today: date
+) -> tuple[dict[str, str | None] | None, bool]:
+    """Like `_extract_time_range` but also returns whether the phrase was
+    relative-to-now (e.g. "last week", "yesterday", "today", "this week").
+
+    Relative windows that miss every node should fall back to most-recent
+    items at search time — explicit-date windows should not.
+    """
     lowered = query.lower()
 
     range_match = DATE_RANGE_PATTERN.search(lowered)
@@ -272,42 +291,42 @@ def _extract_time_range(query: str, today: date) -> dict[str, str | None] | None
         if start_day is not None and end_day is not None:
             if end_day < start_day:
                 start_day, end_day = end_day, start_day
-            return _time_range(start_day, end_day)
+            return _time_range(start_day, end_day), False
 
     since_match = SINCE_PATTERN.search(lowered)
     if since_match:
         start_day = _parse_date_token(since_match.group(1))
         if start_day is not None:
-            return _time_range(start_day, None)
+            return _time_range(start_day, None), False
 
     after_match = AFTER_PATTERN.search(lowered)
     if after_match:
         start_day = _parse_date_token(after_match.group(1))
         if start_day is not None:
-            return _time_range(start_day + timedelta(days=1), None)
+            return _time_range(start_day + timedelta(days=1), None), False
 
     before_match = BEFORE_PATTERN.search(lowered)
     if before_match:
         end_day = _parse_date_token(before_match.group(1))
         if end_day is not None:
-            return {"start": None, "end": _day_boundary_iso(end_day, time.min)}
+            return {"start": None, "end": _day_boundary_iso(end_day, time.min)}, False
 
     explicit_dates = DATE_TOKEN_PATTERN.findall(lowered)
     if explicit_dates:
         explicit_day = _parse_date_token(explicit_dates[0])
         if explicit_day is not None:
-            return _day_range(explicit_day)
+            return _day_range(explicit_day), False
 
     if "yesterday" in lowered:
-        return _day_range(today - timedelta(days=1))
+        return _day_range(today - timedelta(days=1)), True
     if "today" in lowered:
-        return _day_range(today)
+        return _day_range(today), True
     if "last week" in lowered:
-        return _week_range(today - timedelta(days=7))
+        return _week_range(today - timedelta(days=7)), True
     if "this week" in lowered:
-        return _week_range(today)
+        return _week_range(today), True
 
-    return None
+    return None, False
 
 
 def _infer_question_shape(
@@ -440,7 +459,7 @@ def _infer_answer_mode(
 
 def fallback_parse(query: str, today: date | None = None) -> ParsedQuery:
     current_date = today or date.today()
-    time_range = _extract_time_range(query, current_date)
+    time_range, time_range_relative = _extract_time_range_with_meta(query, current_date)
     relation_filters = _infer_relation_filters(query)
     question_shape = _infer_question_shape(query, relation_filters)
     return ParsedQuery(
@@ -453,6 +472,7 @@ def fallback_parse(query: str, today: date | None = None) -> ParsedQuery:
         answer_mode=_infer_answer_mode(query, relation_filters, question_shape),
         question_shape=question_shape,
         anchor_terms=_extract_anchor_terms(query),
+        time_range_relative=time_range_relative,
     )
 
 
@@ -517,7 +537,7 @@ def _invoke_llm(raw_query: str, today: date) -> str:
 
         client = OpenAI(timeout=LLM_TIMEOUT_SECONDS)
         response = client.responses.create(
-            model=os.getenv("OPENAI_MODEL", "gpt-4.1-mini"),
+            model=LLM_QUERY_PARSER_OPENAI_MODEL,
             input=prompt,
             temperature=0,
         )
@@ -652,6 +672,11 @@ def _normalize_parsed_query(payload: dict[str, object], raw_query: str) -> Parse
     if not isinstance(intent, str) or intent not in VALID_INTENTS:
         intent = _default_intent_for_shape(question_shape, time_range)
 
+    lowered = raw_query.lower()
+    time_range_relative = time_range is not None and any(
+        phrase in lowered for phrase in ("yesterday", "today", "last week", "this week")
+    )
+
     return ParsedQuery(
         keywords=keywords,
         entities=entities,
@@ -662,6 +687,7 @@ def _normalize_parsed_query(payload: dict[str, object], raw_query: str) -> Parse
         answer_mode=answer_mode,
         question_shape=question_shape,
         anchor_terms=_coerce_anchor_terms(payload.get("anchor_terms"), raw_query),
+        time_range_relative=time_range_relative,
     )
 
 
