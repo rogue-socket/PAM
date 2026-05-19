@@ -17,5 +17,6 @@ pam_log.jsonl
 .tmp_manual_cli/copilot_cli_eval/
 
 handoffs/
+backlog.md
 
 test_findings/eval_runs/
