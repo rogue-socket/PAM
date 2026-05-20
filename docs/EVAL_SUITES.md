@@ -81,7 +81,7 @@ For day-to-day development, **`irl` gives the highest signal per query** — eve
 **Examples**:
 - "What is the stable machine-readable interface for Copilot callers?" → "The --json flag is..."
 - "How do valid_at and created_at differ?" → "valid_at expresses real-world time of validity"
-- "Which ranking signal has the highest weight?" → "text relevance" (the corpus article predates the hybrid-retrieval weight split; `config.py` now has `WEIGHT_TEXT_RELEVANCE = 0.30` tied with `WEIGHT_RECENCY = 0.30` — the regression corpus is stale on this point)
+- "Which ranking signals carry the highest weight?" → "text relevance and recency tied" (`config.py` has `WEIGHT_TEXT_RELEVANCE = 0.30` tied with `WEIGHT_RECENCY = 0.30`)
 - "What limit is used before graph expansion?" → "FTS candidate limit is 50"
 
 ### irl (31 / 68) — recommended for kayo

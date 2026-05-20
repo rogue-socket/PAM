@@ -142,7 +142,6 @@ Important behavior:
 - matching uses `rapidfuzz` when available and `SequenceMatcher` otherwise
 - new entities are created as `draft` nodes with metadata `{"aliases": [name], "category": category}`, and are embedded via `embed_and_store_node()` right after creation
 - `REFERS_TO` edges are created only after the main node already exists
-- the `content` parameter on both functions is currently accepted but unused (discarded on entry); it is kept for signature stability
 
 ### 2.5 `pipeline.py`
 

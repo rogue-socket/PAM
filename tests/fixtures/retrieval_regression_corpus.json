@@ -31,7 +31,7 @@
   ],
   "notes": [
     "The FTS candidate limit is 50 before graph expansion runs.",
-    "Ranking weights favor text relevance more than recency and importance.",
+    "Ranking weights spread relevance across several signals, with text relevance and recency tied for the highest weight.",
     "The --json flag is the stable machine-readable interface for Copilot callers.",
     "Sessions older than 24 hours are considered stale unless --force is used.",
     "valid_at captures when a fact was true; created_at captures when PAM stored it.",
@@ -95,9 +95,9 @@
     },
     {
       "expected_substrings": [
-        "Ranking weights favor text relevance more than recency and importance."
+        "Ranking weights spread relevance across several signals, with text relevance and recency tied for the highest weight."
       ],
-      "query": "Which ranking signal has the highest weight?"
+      "query": "Which ranking signals carry the highest weight?"
     },
     {
       "expected_substrings": [

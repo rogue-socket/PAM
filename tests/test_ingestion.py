@@ -256,7 +256,6 @@ class IngestionModuleTests(unittest.TestCase):
             note_id,
             [{"name": "python", "category": "tool"}],
             {"python": "The note references Python."},
-            "Used python",
         )
 
         self.assertEqual(linked_ids, [existing_id])
@@ -269,7 +268,6 @@ class IngestionModuleTests(unittest.TestCase):
             note_id,
             [{"name": "PAM", "category": "project"}],
             {"PAM": "The note references PAM."},
-            "Building PAM",
         )
 
         self.assertEqual(len(linked_ids), 1)
@@ -302,7 +300,6 @@ class IngestionModuleTests(unittest.TestCase):
                 note_id,
                 [{"name": "Python", "category": "tool"}],
                 {},
-                "Used Python",
             )
 
         self.assertEqual(linked_ids, [candidate_id])
@@ -315,7 +312,6 @@ class IngestionModuleTests(unittest.TestCase):
             note_id,
             [{"name": "Copilot", "category": "tool"}],
             {"Copilot": "The note mentions Copilot."},
-            "Using Copilot",
         )
 
         self.assertEqual(len(linked_ids), 1)

@@ -97,13 +97,14 @@ class CopilotCliEvalHarnessTests(unittest.TestCase):
             stderr=b"",
         )
 
-        with mock.patch.object(eval_module, "_retrieve_context", return_value="Retrieved PAM results:\n- launch note") as retrieve_mock, mock.patch.object(
+        with mock.patch.object(
             eval_module,
             "_get_copilot_command_prefix",
             return_value=("copilot.cmd",),
         ), mock.patch.object(eval_module.subprocess, "run", return_value=completed) as run_mock:
             answer = eval_module._run_copilot_query(
                 "When is the launch now?",
+                retrieved_context="Retrieved PAM results:\n- launch note",
                 model="claude-sonnet-4.5",
                 top_k=5,
                 db_path=Path("pam-test.db"),
@@ -111,7 +112,6 @@ class CopilotCliEvalHarnessTests(unittest.TestCase):
             )
 
         self.assertEqual(answer, "Launch moved to 2026-05-01")
-        retrieve_mock.assert_called_once_with("When is the launch now?", top_k=5)
         run_kwargs = run_mock.call_args.kwargs
         run_command = run_mock.call_args.args[0]
         self.assertEqual(run_command[0], "copilot.cmd")
@@ -125,7 +125,7 @@ class CopilotCliEvalHarnessTests(unittest.TestCase):
         self.assertFalse(run_kwargs["check"])
 
     def test_run_copilot_query_raises_on_timeout(self) -> None:
-        with mock.patch.object(eval_module, "_retrieve_context", return_value="Retrieved PAM results"), mock.patch.object(
+        with mock.patch.object(
             eval_module,
             "_get_copilot_command_prefix",
             return_value=("copilot.cmd",),
@@ -137,6 +137,7 @@ class CopilotCliEvalHarnessTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "timed out"):
                 eval_module._run_copilot_query(
                     "When is the launch now?",
+                    retrieved_context="Retrieved PAM results",
                     model="claude-sonnet-4.5",
                     top_k=5,
                     db_path=Path("pam-test.db"),
@@ -152,12 +153,11 @@ class CopilotCliEvalHarnessTests(unittest.TestCase):
         )
 
         with mock.patch.object(
-            eval_module, "_retrieve_context", return_value="Retrieved PAM results:\n- launch note"
-        ) as retrieve_mock, mock.patch.object(
             eval_module, "_get_claude_command_prefix", return_value=("/usr/local/bin/claude",)
         ), mock.patch.object(eval_module.subprocess, "run", return_value=completed) as run_mock:
             answer = eval_module._run_claude_query(
                 "When is the launch now?",
+                retrieved_context="Retrieved PAM results:\n- launch note",
                 model="claude-sonnet-4-5",
                 top_k=5,
                 db_path=Path("pam-test.db"),
@@ -165,7 +165,6 @@ class CopilotCliEvalHarnessTests(unittest.TestCase):
             )
 
         self.assertEqual(answer, "Launch moved to 2026-05-01")
-        retrieve_mock.assert_called_once_with("When is the launch now?", top_k=5)
         run_command = run_mock.call_args.args[0]
         self.assertEqual(run_command[0], "/usr/local/bin/claude")
         self.assertIn("-p", run_command)
@@ -179,8 +178,6 @@ class CopilotCliEvalHarnessTests(unittest.TestCase):
 
     def test_run_claude_query_raises_on_timeout(self) -> None:
         with mock.patch.object(
-            eval_module, "_retrieve_context", return_value="Retrieved PAM results"
-        ), mock.patch.object(
             eval_module, "_get_claude_command_prefix", return_value=("claude",)
         ), mock.patch.object(
             eval_module.subprocess,
@@ -190,6 +187,7 @@ class CopilotCliEvalHarnessTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "timed out"):
                 eval_module._run_claude_query(
                     "Q?",
+                    retrieved_context="Retrieved PAM results",
                     model="claude-sonnet-4-5",
                     top_k=5,
                     db_path=Path("pam-test.db"),
@@ -204,6 +202,7 @@ class CopilotCliEvalHarnessTests(unittest.TestCase):
                 eval_module._run_backend_query(
                     "copilot",
                     "Q?",
+                    retrieved_context="",
                     model="m",
                     top_k=1,
                     db_path=Path("p"),
@@ -215,6 +214,7 @@ class CopilotCliEvalHarnessTests(unittest.TestCase):
                 eval_module._run_backend_query(
                     "claude",
                     "Q?",
+                    retrieved_context="",
                     model="m",
                     top_k=1,
                     db_path=Path("p"),
@@ -230,6 +230,7 @@ class CopilotCliEvalHarnessTests(unittest.TestCase):
             eval_module._run_backend_query(
                 "openai",
                 "Q?",
+                retrieved_context="",
                 model="m",
                 top_k=1,
                 db_path=Path("p"),

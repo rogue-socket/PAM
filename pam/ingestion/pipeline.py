@@ -565,7 +565,6 @@ def ingest(
                     node_id=node_id,
                     entities=entities,
                     edge_facts=edge_facts,
-                    content=extracted["content"],
                     workspace_id=extracted["workspace_id"],
                 )
 

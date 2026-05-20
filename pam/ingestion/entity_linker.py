@@ -86,15 +86,12 @@ def link_entities_detailed(
     node_id: str,
     entities: list[dict],
     edge_facts: dict[str, str],
-    content: str,
     workspace_id: str | None = None,
 ) -> LinkEntitiesResult:
     linked_ids: list[str] = []
     linked_existing = 0
     created_new = 0
     seen_names: set[str] = set()
-
-    del content
 
     with transaction(conn):
         for entity in entities[:MAX_ENTITIES_PER_INGESTION]:
@@ -163,10 +160,9 @@ def link_entities(
     node_id: str,
     entities: list[dict],
     edge_facts: dict[str, str],
-    content: str,
     workspace_id: str | None = None,
 ) -> list[str]:
-    return link_entities_detailed(conn, node_id, entities, edge_facts, content, workspace_id=workspace_id).entity_ids
+    return link_entities_detailed(conn, node_id, entities, edge_facts, workspace_id=workspace_id).entity_ids
 
 
 __all__ = ["LinkEntitiesResult", "link_entities", "link_entities_detailed"]

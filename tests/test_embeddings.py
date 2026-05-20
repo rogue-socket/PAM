@@ -162,7 +162,6 @@ class EntityIngestEmbeddingTests(unittest.TestCase):
                 node_id=parent_id,
                 entities=[{"name": "Mira", "category": "person"}],
                 edge_facts={},
-                content="Mira pushed the auth fix",
                 workspace_id="ws-test",
             )
         self.assertEqual(result.created_new, 1)
