@@ -56,6 +56,8 @@ The live command set is:
 - `pam graph`
 - `pam migrate`
 - `pam stats`
+- `pam doctor`
+- `pam rebuild-fts`
 
 Important command behavior:
 
@@ -66,8 +68,10 @@ Important command behavior:
 - `chat` grounds a Copilot answer on `query_for_agent()` plus `format_for_context_window()` and can optionally print the retrieved PAM context
 - `list` filters by `type`, `status`, `since`, and `limit`
 - `graph` prints both outgoing and incoming edges with fact text when available
-- `migrate` just re-runs `initialize()`
+- `migrate` re-runs `initialize()`; with `--backfill-embeddings` it also calls `backfill_embeddings()` to embed every node missing a vector and reports counts
 - `stats` reports counts by node type, status, edge relation, and FTS entries
+- `doctor` reports database health — schema version, `PRAGMA integrity_check`, FTS drift, vector-channel coverage, missing-embedding count — and exits non-zero when drift is detected
+- `rebuild-fts` wipes and rebuilds `fts_index` from `nodes` inside one transaction
 
 ---
 
@@ -105,7 +109,7 @@ Important current behavior:
 
 - `ChatAgentError`
 - `ChatResponse`
-- `answer_with_pam(raw_query, *, model=..., top_k=..., workspace_id=None)`
+- `answer_with_pam(raw_query, *, model=..., top_k=..., workspace_id=None, cwd=None)`
 - `build_chat_prompt(raw_query, retrieved_context)`
 - `retrieve_context_for_chat(raw_query, *, top_k, workspace_id=None)`
 

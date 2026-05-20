@@ -36,6 +36,12 @@ The most important stale-doc fix is this: the current suite proves relation-awar
 - `tests/test_lifecycle.py`
 - `tests/test_relations.py`
 - `tests/test_retrieval.py`
+- `tests/test_transaction.py` — `pam/db/transaction.py` context manager: commit, rollback, nested savepoints
+- `tests/test_ingestion_atomicity.py` — failure-injection: a mid-pipeline mutator raises, asserting full ingest rollback
+- `tests/test_orchestrator_atomicity.py` — orchestration-level transaction rollback scenarios
+- `tests/test_embeddings.py` — embedding model load, vector-store writes, and backfill behavior
+- `tests/test_doctor.py` — the `pam doctor` / `doctor_report()` health surface
+- `tests/test_telemetry.py` — `append_log_line()` best-effort log writes
 - `tests/fixtures/large_agent_eval_corpus.json`
 - `tests/fixtures/retrieval_regression_corpus.json`
 - `tests/fixtures/irl_eval_corpus.json` *(added 2026-05-06)*
@@ -203,7 +209,7 @@ This matters because the live-boundary eval harness has failure modes that diffe
 - `tests/fixtures/retrieval_regression_corpus.json` validates direct lookup quality, paraphrase robustness, negative behavior, distractor handling, and top-hit stability for a curated subset of prompts. As of 2026-05-06 also runnable end-to-end via `--suite regression`.
 - `tests/fixtures/large_agent_eval_corpus.json` validates larger-scale mixed-content ingest plus direct, paraphrased, relationship, timeline, and negative-query behavior
 - `tests/hard_agent_eval_fixture.py` generates the hard-suite scenario catalog and is maintained test source
-- `tests/fixtures/irl_eval_corpus.json` (added 2026-05-06) is a hand-curated 31-item / 38-query corpus shaped like a working engineer's mid-month memory state. Stresses what the templated suites cannot: vague phrasing, typos, multi-hop reasoning (2/3/4 layers), false-premise pushback, demanding multi-part synthesis, time-relative queries, and entity-type colloquialisms ("who do I report to?"). Runnable via `--suite irl`.
+- `tests/fixtures/irl_eval_corpus.json` (added 2026-05-06) is a hand-curated 31-item / 68-query corpus shaped like a working engineer's mid-month memory state. Stresses what the templated suites cannot: vague phrasing, typos, multi-hop reasoning (2/3/4 layers), false-premise pushback, demanding multi-part synthesis, colloquial-relationship and entity-by-role queries, paraphrase, and time-relative / time-vague queries ("who do I report to?"). Runnable via `--suite irl`.
 - `.tmp_manual_cli/detailed_memory_eval/run_detailed_eval.py` is maintained because the detailed suite imports it directly
 
 For a side-by-side description of what each end-to-end eval suite tests and how they differ, see `docs/EVAL_SUITES.md`. For the latest end-to-end run results and per-category miss diagnostics, see `docs/EVAL_RESULTS_2026-05-06.md`.
@@ -331,7 +337,7 @@ python scripts/run_copilot_cli_eval.py --suite detailed --max-queries 30
 python scripts/run_copilot_cli_eval.py --suite hard --backend claude \
   --max-queries 25 --include-misses
 
-# IRL suite (the full 38 queries, real-world mess)
+# IRL suite (the full 68 queries, real-world mess)
 python scripts/run_copilot_cli_eval.py --suite irl --backend claude \
   --batch-size 10 --include-misses
 

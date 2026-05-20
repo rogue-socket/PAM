@@ -17,10 +17,12 @@ This is the live retrieval path used by both the CLI and the agent interface.
    - `keywords`
    - `entities`
    - `time_range`
+   - `time_range_relative`
    - `intent`
    - `relation_filters`
    - `relation_direction`
    - `answer_mode`
+   - `question_shape`
    - `anchor_terms`
 4. If LLM parsing is unavailable or fails, the parser falls back to deterministic parsing.
 5. Deterministic fallback can infer:
@@ -30,12 +32,12 @@ This is the live retrieval path used by both the CLI and the agent interface.
    - relation families such as `SUPERSEDES`, `DERIVED_FROM`, `REFERS_TO`, `CONTRADICTS`, and `RELATED`
    - incoming or outgoing relationship direction
    - relationship-oriented answer mode, including generic relation intent that does not always infer a concrete relation family
-6. `pam.retrieval.search.fts_search_with_filter()` turns parsed keywords into an FTS lookup.
+6. `pam.retrieval.search.fts_search_with_filter()` turns parsed keywords into an FTS lookup, and `pam.retrieval.search.vector_search()` embeds the raw query and retrieves the nearest `vec_nodes` rows by cosine similarity (vector search returns nothing when embeddings are unavailable, so retrieval degrades cleanly to FTS-only).
 7. `pam.db.fts.fts_search()` filters candidates by:
    - `status = active`
    - resolved `workspace_id`
    - optional `valid_at` bounds
-8. `fts_search_with_filter()` applies an overlap-based precision filter. If that filter removes everything, it falls back to the first few raw FTS hits.
+8. `fts_search_with_filter()` applies an overlap-based precision filter. If that filter removes everything, it falls back to the first few raw FTS hits. `_merge_fts_and_vector()` then unions the FTS and vector candidate sets by node id before expansion.
 9. `pam.retrieval.graph_expander.expand()` widens the result set:
    - requested relationship queries expand incoming or outgoing edges for the requested relation family
    - `REFERS_TO` edges can pull in traversable entities and the other nodes that refer to those entities
@@ -45,6 +47,7 @@ This is the live retrieval path used by both the CLI and the agent interface.
 10. `pam.retrieval.ranker.rank_and_assemble()` combines candidate and expanded nodes, scores them, and assembles a `RetrievalResult`.
 11. Node scoring combines:
    - transformed BM25 relevance
+   - vector cosine similarity (when the query and node both have embeddings)
    - recency from `valid_at`
    - explicit `importance`
    - optional entity-match bonus
@@ -139,7 +142,7 @@ This is the live write path.
 14. If the node type is `source` and `parent_note_id` is present:
    - the parent note is validated
    - a `DERIVED_FROM` edge is created from note to source
-15. If linking or provenance creation fails after the main node insert, the pipeline deletes the main node and re-raises.
+15. The main node insert, node embedding, entity linking, relationship edges, and provenance edges all run inside a single `transaction()` block; if any step fails the transaction rolls back atomically (no partial state survives) and the exception is re-raised.
 16. A best-effort ingest log event is appended.
 
 ### Intended Graph-Construction Flow
@@ -172,7 +175,7 @@ The practical rule is simple: ingest should construct as much dependable graph a
 #### Decay
 
 1. A caller invokes `cli.py decay` or `pam.lifecycle.apply_decay(...)`.
-2. `apply_decay()` loads all nodes and filters in Python for statuses `active`, `draft`, and `reference`.
+2. `apply_decay()` queries the database for all nodes with status `active`, `draft`, or `reference` (the filter is pushed into SQL via `list_nodes(status=ELIGIBLE_STATUSES)`).
 3. Pinned nodes at max importance are skipped.
 4. `compute_decayed_importance()` applies exponential decay from `updated_at`.
 5. Updated importance values are batch-written.
@@ -185,7 +188,7 @@ The practical rule is simple: ingest should construct as much dependable graph a
 2. The node must exist and currently be `archived`.
 3. Status is reset to `active`.
 4. Importance is reset to the configured default.
-5. No lifecycle log event is currently emitted for unarchive.
+5. An `unarchive` lifecycle log event is appended.
 
 ### Intended Memory-Evolution Behavior
 
@@ -267,6 +270,8 @@ Human command surface:
 - `graph`
 - `migrate`
 - `stats`
+- `doctor`
+- `rebuild-fts`
 
 Current CLI-specific behaviors:
 
@@ -274,7 +279,8 @@ Current CLI-specific behaviors:
 - `--type` only applies to plain-text ingest
 - `query` supports `--top` and `--json`
 - `stats` reports type counts, status counts, relation counts, and total FTS rows
-- there is no built-in `doctor` or `rebuild-fts` command
+- `migrate` accepts `--backfill-embeddings` to embed every node missing a vector
+- `doctor` reports database health and exits non-zero on drift; `rebuild-fts` wipes and rebuilds the FTS index from `nodes`
 
 ### Intended Human Query Experience
 

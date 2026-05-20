@@ -45,6 +45,7 @@ class ParsedQuery:
     answer_mode: Literal["node", "relationship"] = "node"
     question_shape: Literal["lookup", "relationship", "influence", "evolution", "theme", "gap"] = "lookup"
     anchor_terms: list[str] = field(default_factory=list)
+    time_range_relative: bool = False
 ```
 
 Public exports:
@@ -89,15 +90,19 @@ Important current behavior:
 - FTS is always scoped through the resolved workspace ID when one is supplied
 - time filters apply to `valid_at`
 - `fts_search_with_filter()` applies a precision filter after raw FTS
-- if the precision filter removes everything, strong anchor terms can seed a fallback candidate pass before the function falls back to the first five raw candidates
+- if the precision filter removes everything, strong anchor terms can seed a fallback candidate pass before the function falls back to the first five raw FTS candidates
+- when FTS returns no candidates at all and the query carries a time range, a final fallback pulls all nodes within `parsed.time_range` — or the most-recent nodes when the time phrase was relative (`time_range_relative`) and nothing matched the window
+- alongside FTS, `retrieve()` also runs `vector_search()` (query embedding → nearest `vec_nodes` rows) and `_merge_fts_and_vector()` unions both candidate sets before expansion; `vector_search()` returns nothing when embeddings are unavailable, so retrieval degrades cleanly to FTS-only
 - `retrieve()` opens an initialized connection, parses the query, runs retrieval, logs the request, and closes the connection
 
-This is still the main retrieval bottleneck for graph-native behavior. Candidate recall is mostly lexical, with anchor rescue as a narrow fallback rather than a full graph-first planner.
+This is still the main retrieval bottleneck for graph-native behavior. Candidate recall is lexical plus vector similarity, with anchor rescue as a narrow fallback rather than a full graph-first planner.
 
 ### 2.3 `graph_expander.py`
 
 Public exports:
 
+- `ExpandedPath`
+- `ExpandedPathSegment`
 - `ExpandedResult`
 - `expand(conn, candidates, parsed)`
 
@@ -152,17 +157,17 @@ Public exports:
 - `GraphPathSegment`
 - `RetrievalResult`
 - `days_since(dt, now)`
-- `score(node, fts_rank, entity_boost, now) -> (total, components)`
-- `rank_and_assemble(conn, candidates, expanded, parsed, top_k=None)`
+- `score(node, fts_rank, entity_boost, now, vector_similarity=None) -> (total, components)`
+- `rank_and_assemble(conn, candidates, expanded, parsed, top_k=None, vector_similarities=None)`
 
 Important current behavior:
 
-- ranking still combines text relevance, recency, importance, and optional entity bonus
+- ranking combines text relevance, vector similarity, recency, importance, and optional entity bonus
 - `ordered_nodes` preserves the final ranked node order
 - `relationships` is now a first-class result field
 - `query_meta` now carries `question_shape` and `anchor_terms` alongside intent and relation metadata
 - `graph_explanations` now surfaces compact path, bridge, cluster, and sparse-evidence summaries for downstream renderers
-- `score_components` carries per-node `{text_relevance, recency, importance, entity_bonus}` post-weight contributions for nodes in `ordered_nodes`; the four entries sum to the rank-key under the same float arithmetic
+- `score_components` carries per-node `{text_relevance, vector_similarity, recency, importance, entity_bonus}` post-weight contributions for nodes in `ordered_nodes`; the five entries sum to the rank-key under the same float arithmetic, plus an optional `derived_propagation` entry when the `DERIVED_FROM` score-propagation path fires
 - in relationship mode, edges are ranked first and nodes are selected around those edges
 - when explicit relationship hits are absent, support paths can still drive node ordering for influence, connection, theme, gap, and evolution prompts
 - direct connection paths can now be inferred from entity-to-entity `RELATED` chains instead of only explicit note-to-note edges
@@ -202,7 +207,7 @@ The live flow is:
 
 1. `parse_query_with_metadata(raw_query)`
 2. resolve workspace scope
-3. `fts_search_with_filter(...)`
+3. `fts_search_with_filter(...)` and `vector_search(...)`, merged by `_merge_fts_and_vector(...)`
 4. `expand(...)`
 5. `rank_and_assemble(...)`
 6. append query log event
@@ -302,7 +307,7 @@ Current expansion behavior is more nuanced than the older docs implied.
 - event and note candidates expand through `REFERS_TO` to entity nodes and then back through reverse `REFERS_TO` edges to related notes and events
 - note candidates expand through `DERIVED_FROM` to source nodes
 - note candidates expand through `SUPERSEDES` to older nodes, including `reference` nodes
-- `RELATED` expansion is reserved for reasoning queries
+- `RELATED` concept-chain expansion fires for `intent == "reason"` or when `RELATED` is explicitly in `relation_filters`; direct outgoing-`RELATED` expansion is reserved for `intent == "reason"`
 
 `CONTRADICTS` is not used for traversal. It is surfaced later as part of result assembly.
 

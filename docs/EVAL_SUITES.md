@@ -8,7 +8,7 @@ PAM has five end-to-end eval corpora. Each tests a different thing. This doc is 
 | **hard** | 96 | 192 | Programmatic × 16 scenarios | HIGH | **Consistency** of retrieval across many similar shapes |
 | **large** | 100 | 200 | Programmatic × 20 scenarios | HIGH | **Scale + consistency** (broader, shallower than hard) |
 | **regression** | 27 | 20 | Hand-curated about PAM itself | LOW | **Dogfooding** — PAM should explain its own design |
-| **irl** | 31 | 38 | Hand-curated, messy real-world | LOW | **Real-world mess** — vague / typo / multi-hop / wrong-premise / demanding / time-relative / out-of-blue |
+| **irl** | 31 | 68 | Hand-curated, messy real-world | LOW | **Real-world mess** — vague / typo / multi-hop / wrong-premise / colloquial-relationship / paraphrase / demanding / time-relative / time-vague / entity-by-role / out-of-blue |
 
 All five are runnable end-to-end via `scripts/run_copilot_cli_eval.py --suite <name>` (since 2026-05-06).
 
@@ -81,10 +81,10 @@ For day-to-day development, **`irl` gives the highest signal per query** — eve
 **Examples**:
 - "What is the stable machine-readable interface for Copilot callers?" → "The --json flag is..."
 - "How do valid_at and created_at differ?" → "valid_at expresses real-world time of validity"
-- "Which ranking signal has the highest weight?" → "text relevance" (matches `WEIGHT_TEXT_RELEVANCE = 0.45` in config.py)
+- "Which ranking signal has the highest weight?" → "text relevance" (the corpus article predates the hybrid-retrieval weight split; `config.py` now has `WEIGHT_TEXT_RELEVANCE = 0.30` tied with `WEIGHT_RECENCY = 0.30` — the regression corpus is stale on this point)
 - "What limit is used before graph expansion?" → "FTS candidate limit is 50"
 
-### irl (31 / 38) — recommended for kayo
+### irl (31 / 68) — recommended for kayo
 
 **Domain**: a working engineer's mid-month memory state. 5 themed threads:
 - Auth bug investigation with corrected diagnosis (JWT theory → SameSite/Safari ITP correction, 1 SUPERSEDES pair)
@@ -95,22 +95,26 @@ For day-to-day development, **`irl` gives the highest signal per query** — eve
 
 Plus 5 personal opinions, 3 stream-of-consciousness items.
 
-**Queries**: 38 unique, organized by realistic-mess category:
+**Queries**: 68 unique, organized by realistic-mess category:
 
 | Category | Count | Example |
 |----------|-------|---------|
-| `vague` | 5 | "what was that auth thing again?" |
+| `colloquial_relationship` | 16 | "who do I report to?" |
+| `wrong_premise` | 6 | "when I cancelled the ClickHouse migration, what was the alternative?" (didn't cancel) |
 | `casual` | 5 | "rakhi pr stuff" |
-| `typo` | 1 | "wat did i fix on apr 15" |
 | `multihop_2` | 5 | "after we switched off pip-tools, what package manager did I land on?" |
-| `multihop_3` | 3 | "Mira's compromise on the event store — when was the final decision made?" |
-| `multihop_4` | 1 | "based on my preference for pytest-xdist, what would I likely think about pytest-parallel?" |
-| `wrong_premise` | 4 | "when I cancelled the ClickHouse migration, what was the alternative?" (didn't cancel) |
+| `multihop_3` | 5 | "Mira's compromise on the event store — when was the final decision made?" |
+| `vague` | 5 | "what was that auth thing again?" |
 | `demanding` | 4 | "list everyone whose PR I reviewed in April and what each contained" |
-| `time_relative` | 2 | "what did I do last week?" |
-| `out_of_blue` | 2 | "favorite coffee in bergen?" |
-| `partial_id` | 2 | "PR 441 status" |
 | `negative` | 4 | "what did Tom say about the kubernetes upgrade?" |
+| `paraphrase` | 4 | "what's the auth bug rooted in Apple's privacy crackdown?" |
+| `entity_by_role` | 3 | "the person who pushed back on the database migration" |
+| `time_relative` | 3 | "what did I do last week?" |
+| `time_vague` | 3 | "the auth thing from last month" |
+| `partial_id` | 2 | "PR 441 status" |
+| `multihop_4` | 1 | "based on my preference for pytest-xdist, what would I likely think about pytest-parallel?" |
+| `out_of_blue` | 1 | "favorite coffee in bergen?" |
+| `typo` | 1 | "wat did i fix on apr 15" |
 
 **What a miss tells you**: surgical. Each category isolates a different failure mode:
 - A `wrong_premise` miss = answer prompt too conservative (forces NO_ANSWER instead of pushback)
@@ -124,7 +128,7 @@ python scripts/run_copilot_cli_eval.py --suite irl --backend claude \
   --batch-size 10 --include-misses
 ```
 
-The 2026-05-06 run scored 33/38 = 86.8%. All 5 misses were real (no matcher false-negatives) and each maps to one specific PAM or prompt-side improvement. See `docs/EVAL_RESULTS_2026-05-06.md` for the breakdown.
+The 2026-05-06 run scored 33/38 = 86.8% on the original 38-query corpus (all 5 misses real, no matcher false-negatives). The corpus has since grown to 68 queries, adding the `colloquial_relationship`, `paraphrase`, `time_vague`, and `entity_by_role` categories. See `docs/EVAL_RESULTS_2026-05-06.md` for the original breakdown and `test_findings/` for later runs.
 
 ## Adding a new suite
 

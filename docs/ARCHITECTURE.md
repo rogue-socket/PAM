@@ -2,7 +2,7 @@
 
 ## Purpose
 
-PAM should be a local-first personal agent memory system, not just a note store with search. The memory graph is the primary model of the user's work. Search, optional LLM help, and any future vector or embedding layer are supporting mechanisms for building and traversing that graph.
+PAM should be a local-first personal agent memory system, not just a note store with search. The memory graph is the primary model of the user's work. Search, vector similarity, and optional LLM help are supporting mechanisms for building and traversing that graph.
 
 The product question this architecture needs to answer is:
 
@@ -44,6 +44,7 @@ PAM currently provides:
 - local SQLite-backed storage with first-class nodes and edges
 - workspace scoping through `workspace_id`
 - FTS5 lookup over title, content, and summary
+- optional vector-similarity retrieval over a sqlite-vec `vec_nodes` table, merged with FTS candidates
 - optional LLM help for summarization, entity extraction, edge facts, and query parsing
 - deterministic offline fallback for both ingest and query parsing
 - relation-aware query parsing, graph expansion, and edge ranking for explicit relation families
@@ -56,7 +57,7 @@ This is a real baseline. The docs should not pretend the repo is still pure keyw
 For the personal-memory use case, the current baseline is still missing several critical properties:
 
 - ingest writes too little high-value graph structure beyond entity references, source provenance, and narrow cue-based derivation, supersession, or contradiction
-- retrieval remains FTS-led, so graph reasoning usually starts only after lexical candidates are found
+- retrieval remains candidate-led (FTS plus vector similarity), so graph reasoning usually starts only after those candidates are found
 - explicit relation queries are stronger than generic graph questions such as influence, themes, evolution, or adjacent topics
 - result payloads expose relationships, but not richer explanation paths, cluster summaries, or missing-edge diagnostics
 - the evaluation suites mostly prove retrieval quality and explicit relation handling, not graph-native reasoning quality
@@ -113,6 +114,7 @@ Key schema elements today:
 - `nodes`: primary memory records
 - `edges`: graph relationships between nodes
 - `fts_index`: FTS5 virtual table over title, content, and summary
+- `vec_nodes` / `vec_node_map`: sqlite-vec virtual table of node embeddings and its node-id map (created by the v2 migration; skipped when sqlite-vec is unavailable)
 - `schema_version`: applied versioned migrations
 
 Connection defaults:
@@ -124,18 +126,20 @@ Connection defaults:
 
 Compatibility note:
 
-- versioned migrations currently stop at schema version 1
+- versioned migrations currently stop at schema version 2 (v1 is the node/edge/FTS schema; v2 adds the vector-retrieval tables)
 - older stores missing `workspace_id` are repaired by `_ensure_schema_compatibility()` during initialization
 
 ### Health Checks
 
-The current health API is programmatic, not CLI-driven.
+The health API is available both programmatically and through the `pam doctor` CLI command.
 
 `pam.db.schema.check_database_health()` verifies:
 
 - total node count
 - missing FTS rows for existing nodes
 - orphaned FTS rows with no corresponding node
+
+`pam.db.schema.doctor_report()` (surfaced by `pam doctor`) additionally reports schema version, `PRAGMA integrity_check`, FTS drift counts, vector-channel coverage, and missing-embedding counts.
 
 That is necessary, but not sufficient, for a graph-native memory system. Over time PAM also needs diagnostics that distinguish:
 
@@ -233,6 +237,7 @@ If that requires richer edge typing or edge metadata later, the implementation s
 - `keywords`
 - `entities`
 - `time_range`
+- `time_range_relative`
 - `intent`
 - `relation_filters`
 - `relation_direction`
@@ -262,9 +267,11 @@ PAM does not need to solve all of that through opaque model calls. It does need 
 - `relationships`
 - compatibility views: `conflicts` and `superseded`
 - `edge_facts`
+- `graph_explanations`
 - `session_groups`
 - `query_meta`
 - `ordered_nodes`
+- `score_components`
 
 This is a good machine-facing baseline. It is not yet rich enough to explain why an influence path won, why a theme was judged central, or why a gap suggestion was proposed.
 
@@ -364,6 +371,8 @@ Human CLI currently exposes:
 - `graph`
 - `migrate`
 - `stats`
+- `doctor`
+- `rebuild-fts`
 
 Agent-facing helpers currently expose:
 
@@ -395,6 +404,7 @@ The intended implementation should keep these boundaries stable while making gra
 Node ranking combines:
 
 - transformed BM25 text relevance
+- vector cosine similarity (when the query and node both have embeddings)
 - recency from `valid_at`
 - explicit `importance`
 - optional entity-match bonus

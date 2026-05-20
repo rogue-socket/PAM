@@ -78,18 +78,20 @@ Practical effect:
 
 - recall can improve through entities without cluttering top-level results with auto-created drafts
 
-#### 5. Programmatic Store Health Checks
+#### 5. Store Health Checks — Programmatic And Operator-Facing
 
-Implemented, but only at the library layer.
+Implemented.
 
 Evidence in code:
 
 - `check_database_health()` reports node count plus missing and orphaned FTS rows
+- `doctor_report()` adds schema version, `PRAGMA integrity_check`, vector-channel coverage, and missing-embedding counts
+- the `pam doctor` CLI command surfaces all of this and exits non-zero on drift; `pam rebuild-fts` rebuilds the FTS index
 - detailed and large agent evaluation suites assert healthy FTS state after corpus ingest
 
 Practical effect:
 
-- FTS drift can be detected in code and tests, but not through a first-class CLI operator command
+- FTS and integrity drift can be detected and repaired through a first-class CLI surface, not only in code and tests
 
 #### 6. Evaluation Coverage For Relation-Aware Retrieval
 
@@ -105,25 +107,24 @@ Practical effect:
 
 - the repo has a meaningful dependability story for deterministic retrieval and explicit relation handling
 
-## Remaining Gaps
+## Gap Ledger
+
+Gaps are tracked here whether open or resolved; resolved entries keep the history of what shipped.
 
 ### 1. Transactional Write Boundaries
 
-Not implemented.
+Resolved (2026-05-19).
 
-Current limitation:
+Evidence in code:
 
-- node and edge mutators commit internally
-- feedback and lifecycle operations span multiple commits
-- ingest has a narrow compensation path that deletes the main node if downstream linking fails, but it is not a general transaction boundary
+- `pam/db/transaction.py` provides a `transaction()` context manager (`BEGIN`/`COMMIT`, `SAVEPOINT` when nested)
+- low-level node and edge mutators accept a `commit` keyword so they can defer their commit inside a `transaction()` block
+- `ingest()`, `link_entities_detailed()`, `apply_supersedes()`, `apply_decay()`, and `upvote()` run their multi-write work inside a `transaction()` block
+- failure-injection tests (`tests/test_ingestion_atomicity.py`, `tests/test_orchestrator_atomicity.py`, `tests/test_transaction.py`) assert rollback
 
-Why it matters:
+Practical effect:
 
-- multi-step writes can leave partial state if a failure lands between committed sub-operations
-
-Recommended next step:
-
-- add a transaction helper at the DB layer and stop auto-committing from low-level mutators when they participate in a higher-level operation
+- multi-step writes are atomic; the old delete-the-main-node compensation path is gone
 
 ### 2. Telemetry Is Best-Effort, Not Atomic
 
@@ -142,33 +143,27 @@ Required documentation stance:
 
 - keep describing `pam_log.jsonl` as telemetry only
 
-### 3. Health Tooling Is Not Yet Operator-Facing
+### 3. Operator-Facing Health Tooling
 
-Not implemented.
+Resolved (2026-05-19).
 
-Current limitation:
+Evidence in code:
 
-- `stats` only reports counts
-- there is no CLI `doctor`
-- there is no `rebuild-fts` command
-- current health checks do not run `PRAGMA integrity_check` or verify graph-specific failure modes through a user-facing command
+- `pam doctor` reports schema version, `PRAGMA integrity_check`, FTS drift, vector-channel coverage, and missing-embedding counts, and exits non-zero on drift
+- `pam rebuild-fts` wipes and rebuilds `fts_index` from `nodes` inside one transaction
 
-Why it matters:
+Practical effect:
 
-- repair and inspection still require either Python code or direct SQLite access
-
-Recommended next step:
-
-- expose `check_database_health()` and FTS rebuild support through a CLI surface
+- routine inspection and FTS repair no longer require Python code or direct SQLite access
 
 ### 4. Graph Truthfulness Diagnostics Are Still Thin
 
-Not implemented.
+Partially implemented.
 
-Current limitation:
+Current state:
 
-- a bad graph-native answer can come from missing-edge, missed-expansion, weak ranking, or weak rendering behavior
-- the current product surfaces do not distinguish those failure modes clearly
+- the eval harness has a coarse 5-class miss classifier (`subprocess_error` / `false_positive` / `retrieval_miss` / `partial_surface` / `pick_miss`) in `scripts/run_copilot_cli_eval.py`
+- it does not yet distinguish missing-edge vs missed-expansion vs weak-ranking vs weak-rendering — those still collapse into one class because the classifier only sees the final rendered context
 
 Why it matters:
 
@@ -176,7 +171,7 @@ Why it matters:
 
 Recommended next step:
 
-- add miss categorization and graph-quality diagnostics to eval reporting and operator tooling
+- add per-stage miss categorization (retrieval vs expansion vs ranking vs rendering) once `retrieval_miss` proves the dominant class — see `backlog.md`
 
 ### 5. Schema Provenance Is Only Partly Versioned
 
@@ -204,7 +199,6 @@ Current examples:
 - `add` prints `Added:` even when ingest returned an existing deduped node id
 - `show` does not surface supersession or provenance context directly
 - graph-native question classes still depend on richer JSON or agent formatting more than the plain human surface
-- `unarchive` restores state but does not emit a lifecycle log record
 
 Why it matters:
 
@@ -227,24 +221,24 @@ Required documentation stance:
 
 ## Prioritized Next Work
 
-### Phase 1
+### Phase 1 — done (2026-05-19)
 
-- add transaction boundaries for ingest, feedback, lifecycle, and unarchive
-- add failure-injection coverage for rollback behavior
-
-Outcome:
-
-- PAM stops relying on compensating cleanup and gains a real atomic write story.
-
-### Phase 2
-
-- expose store health checks through a CLI command
-- add FTS rebuild support
-- add graph-quality diagnostics and miss categorization
+- transaction boundaries for ingest, feedback, lifecycle, and unarchive — shipped
+- failure-injection coverage for rollback behavior — shipped
 
 Outcome:
 
-- operators can inspect and repair both search-state and graph-quality issues without writing Python or SQL by hand.
+- PAM stopped relying on compensating cleanup and gained a real atomic write story.
+
+### Phase 2 — done (2026-05-19), one item carried forward
+
+- store health checks exposed through `pam doctor` — shipped
+- FTS rebuild support (`pam rebuild-fts`) — shipped
+- graph-quality diagnostics and miss categorization — partially shipped (coarse 5-class classifier); per-stage categorization carried forward, see Gap 4
+
+Outcome:
+
+- operators can inspect and repair search-state issues without writing Python or SQL by hand; finer graph-quality diagnostics remain open.
 
 ### Phase 3
 

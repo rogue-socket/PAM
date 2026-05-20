@@ -15,7 +15,7 @@ Project-specific terms an outside agent wouldn't know. PAM-specific or eval-spec
 - **workspace_id** — first-class scope key on every node. Defaults to resolved CWD. Dedupe and entity linking are scoped to it. *Distinct from the LLM-call working directory* (`cwd`) — see `pam/chat_agent.py`.
 - **node statuses** — `active` | `draft` | `reference` | `archived`. Draft entities are graph bridges but aren't surfaced as direct results. Superseded nodes flip to `reference` (not `archived`).
 - **edge relations** — the dependable minimum: `REFERS_TO` (note/event → entity), `DERIVED_FROM` (note → source), `RELATED`, `CONTRADICTS`, `SUPERSEDES`. Adding new kinds requires write-time rules dependable enough to maintain graph quality.
-- **score_components** — the per-node breakdown returned in `RetrievalResult.score_components`: `{text_relevance, recency, importance, entity_bonus}`. The four entries sum exactly to the rank-key. Added by audit O8.
+- **score_components** — the per-node breakdown returned in `RetrievalResult.score_components`: `{text_relevance, vector_similarity, recency, importance, entity_bonus}`. The five entries sum exactly to the rank-key, plus an optional `derived_propagation` entry when `DERIVED_FROM` score propagation fires. Added by audit O8.
 - **valid_at vs updated_at** — `valid_at` is the in-world time the memory describes; `updated_at` is the last DB write. Decay uses `updated_at`; recency filtering and ranking use `valid_at`. Don't confuse them.
 
 ## Eval
@@ -38,7 +38,7 @@ Project-specific terms an outside agent wouldn't know. PAM-specific or eval-spec
 
 ## Retrieval primitives
 
-- **FTS5** — SQLite's full-text search module. PAM's only retrieval channel today; tokenizes on non-alphanumeric, which is why `"1:1"` doesn't index usefully.
+- **FTS5** — SQLite's full-text search module. PAM's primary lexical retrieval channel; vector similarity over the `vec_nodes` table runs as a parallel channel and is merged with FTS candidates. FTS5 tokenizes on non-alphanumeric, which is why `"1:1"` doesn't index usefully.
 - **graph expansion** — the second-pass step in `pam/retrieval/graph_expander.py:expand` that adds nodes reachable via specific edges from the FTS candidates. Currently a fixed traversal pattern, not a depth-bounded BFS — see decision 2026-05-07 (O7a).
 - **answer_mode** — `"node"` | `"relationship"`. Field on `ParsedQuery`. `"relationship"` mode favors edge-bearing answers. See `pam/retrieval/query_parser.py`.
 - **intent** — `"lookup"` | `"timeline"` | `"summarize"` | `"reason"`. Field on `ParsedQuery`. `"reason"` triggers RELATED-chain expansion in the graph-expander.

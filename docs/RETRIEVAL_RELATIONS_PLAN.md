@@ -24,7 +24,7 @@ Those questions require more than relation-aware lookup. They require graph-nati
 
 The current retrieval stack already supports the following relation-aware behavior:
 
-- FTS-first candidate retrieval with workspace scoping, time-window filtering, and keyword-overlap precision filtering before graph expansion
+- hybrid candidate retrieval — FTS plus vector similarity over a sqlite-vec `vec_nodes` table, merged — with workspace scoping, time-window filtering, and keyword-overlap precision filtering before graph expansion
 - deterministic parsing fallback when LLM parsing is unavailable, including relation-family inference for `SUPERSEDES`, `DERIVED_FROM`, `REFERS_TO`, `CONTRADICTS`, and `RELATED`
 - relation-aware parsed query metadata: `relation_filters`, `relation_direction`, `answer_mode`, and anchor-term extraction
 - requested-relation expansion before generic expansion, with direction-sensitive traversal for `incoming`, `outgoing`, and `both` queries
@@ -47,9 +47,9 @@ Current write-time relation creation is strongest for:
 
 That is not enough to support graph-native answers about influence, themes, or adjacent topics. Retrieval cannot surface relations that ingest never wrote.
 
-### 2. Candidate recall is still FTS-led
+### 2. Candidate recall is still candidate-led, not graph-led
 
-Graph reasoning usually begins after lexical candidate selection. That works when the right endpoints are textually obvious. It fails more often when:
+Vector similarity now runs alongside FTS, so recall is no longer purely lexical — but graph reasoning still usually begins *after* candidate selection (FTS ∪ vector), not from the graph itself. That works when the right endpoints are textually or semantically obvious. It fails more often when:
 
 - only one side of the relation is named clearly
 - the answer is more visible in the edge or path than in a single node body
@@ -90,7 +90,7 @@ The current ranker can prioritize explicit edges. It cannot yet rank:
 - prefer dependable write-time relation creation over speculative graph inflation
 - improve answerability before adding a large ontology of new relation types
 - make graph-native misses diagnosable rather than hiding them behind aggregate recall numbers
-- avoid jumping to vector or cold-storage complexity before the core graph model is strong enough to justify it
+- vector retrieval has been added as an additive recall channel (see `HYBRID_RETRIEVAL_PLAN.md`); avoid further cold-storage or sidecar complexity before the core graph model is strong enough to justify it
 
 ## Workstreams
 
@@ -227,7 +227,7 @@ Expected outcome:
 
 Graph answers depend less on exact keyword overlap.
 
-Concrete proposal under this phase: see [`HYBRID_RETRIEVAL_PLAN.md`](./HYBRID_RETRIEVAL_PLAN.md), which specifies the embedding model, vector storage, score combination, and LLM-at-ingest typed-edge extraction targeting the IRL `colloquial_relationship` 0/5 baseline.
+Concrete proposal under this phase: see [`HYBRID_RETRIEVAL_PLAN.md`](./HYBRID_RETRIEVAL_PLAN.md), which specifies the embedding model, vector storage, score combination, and LLM-at-ingest typed-edge extraction targeting the IRL `colloquial_relationship` 0/5 baseline. **Status: Phase A of that plan (embeddings + sqlite-vec + hybrid scoring) has shipped; Phase B (LLM-at-ingest typed edges) and constrained multi-hop traversal remain open.**
 
 ### Phase 4: Make Ranking And Output Explanation-Rich
 

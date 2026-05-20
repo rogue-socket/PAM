@@ -1,5 +1,7 @@
 # Hybrid Retrieval Plan
 
+> **Status — 2026-05-20: Phase A has shipped.** Embeddings (`pam/embeddings.py`, `BAAI/bge-small-en-v1.5`), the sqlite-vec `vec_nodes` table, the hybrid five-term score formula, and `pam migrate --backfill-embeddings` are all implemented. Phase B (LLM-at-ingest typed edges, the `MANAGES`/`MENTORS`/`COLLABORATES_WITH` vocabulary, and the edge `confidence` field) is **not** built. The body below is preserved as the original design proposal — for current behavior see `docs/MODULE_RETRIEVAL.md`, `docs/ARCHITECTURE.md`, and `config.py`. Some numeric placeholders below predate the shipped values: the live ranking weights are `WEIGHT_TEXT_RELEVANCE=0.30` / `WEIGHT_VEC_SIMILARITY=0.25` (the "existing `w_text = 0.45`" line was the pre-hybrid value, and the four weights now sum to 1.10).
+
 Concrete proposal for the Phase-3 slice of [`docs/RETRIEVAL_RELATIONS_PLAN.md`](./RETRIEVAL_RELATIONS_PLAN.md): make graph-heavy questions answerable when keyword overlap with the corpus is weak. This is a doc to argue with — every numeric weight, model choice, and threshold is a candidate for revision before code.
 
 Triggering gate: the IRL `colloquial_relationship` row scores 0/5 today on the FTS-only baseline (confirmed 2026-05-08, see `test_findings/2026-05-08_17-37-11_eval-full-pass.md`).

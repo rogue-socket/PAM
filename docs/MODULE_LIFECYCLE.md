@@ -37,7 +37,7 @@ Current constants-in-use come from `config.py`:
 
 Important current behavior:
 
-- `ELIGIBLE_STATUSES` is `{"active", "draft", "reference"}`
+- `ELIGIBLE_STATUSES` is the tuple `("active", "draft", "reference")`
 - `compute_decayed_importance()` leaves pinned nodes at `IMPORTANCE_MAX`
 - decay uses `updated_at`, not `valid_at`
 - `apply_decay()` batch-updates importance with `bulk_update_importance()` and then archives nodes whose decayed importance falls below `ARCHIVE_THRESHOLD`
@@ -55,7 +55,7 @@ Public exports:
 
 Important current behavior:
 
-- `upvote()` increases node importance and optionally boosts traversed edges by `EDGE_UPVOTE_DELTA`
+- `upvote()` increases node importance and optionally boosts the edges named by `edge_ids` — each a `(source_id, target_id, relation)` tuple — by `EDGE_UPVOTE_DELTA`
 - `downvote()` reduces node importance but does not auto-archive the node
 - `pin()` sets importance to `IMPORTANCE_MAX`
 - `supersede()` only allows node types listed in `SUPERSEDE_TYPES`, which is currently `{note, entity}`. The actual edge-write and node-state mutation are delegated to `pam.relations.apply_supersedes()` (see 2.3) so the same semantics apply whether the supersession comes from a user command or an ingest-time cue

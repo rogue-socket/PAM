@@ -17,11 +17,14 @@ The docs set now distinguishes current baseline behavior from intended graph-nat
 | `pam/lifecycle.py` | Source module | `docs/MODULE_LIFECYCLE.md` | Covered |
 | `pam/relations.py` | Source module | `docs/MODULE_LIFECYCLE.md` | Covered |
 | `pam/llm_clients.py` | Source module | `docs/TESTING.md`, `docs/EVAL_SUITES.md` | Covered |
+| `pam/embeddings.py` | Source module | `docs/MODULE_ROOT.md` | Covered |
+| `pam/telemetry.py` | Source module | `docs/MODULE_ROOT.md` | Covered |
 | `pam/db/__init__.py` | Package file | `docs/MODULE_DB.md` | Covered |
 | `pam/db/schema.py` | Source module | `docs/MODULE_DB.md` | Covered |
 | `pam/db/nodes.py` | Source module | `docs/MODULE_DB.md` | Covered |
 | `pam/db/edges.py` | Source module | `docs/MODULE_DB.md` | Covered |
 | `pam/db/fts.py` | Source module | `docs/MODULE_DB.md` | Covered |
+| `pam/db/transaction.py` | Source module | `docs/MODULE_DB.md` | Covered |
 | `pam/ingestion/__init__.py` | Package file | `docs/MODULE_INGESTION.md` | Covered |
 | `pam/ingestion/normalize.py` | Source module | `docs/MODULE_INGESTION.md` | Covered |
 | `pam/ingestion/extract.py` | Source module | `docs/MODULE_INGESTION.md` | Covered |
@@ -35,6 +38,7 @@ The docs set now distinguishes current baseline behavior from intended graph-nat
 | `pam/retrieval/search.py` | Source module | `docs/MODULE_RETRIEVAL.md` | Covered |
 | `scripts/run_copilot_cli_eval.py` | Evaluation utility script | `docs/CODE_INDEX.md` | Covered |
 | `scripts/run_all_copilot_evals.py` | Evaluation utility script | `docs/CODE_INDEX.md` | Covered |
+| `scripts/diag_relationship_misses.py` | Diagnostic utility script | `docs/CODE_INDEX.md` | Covered |
 
 ## Test Files And Fixtures
 
@@ -49,6 +53,12 @@ The docs set now distinguishes current baseline behavior from intended graph-nat
 | `tests/test_llm_clients.py` | Test module | `docs/TESTING.md` | Covered |
 | `tests/test_relations.py` | Test module | `docs/TESTING.md` | Covered |
 | `tests/test_retrieval.py` | Test module | `docs/TESTING.md` | Covered |
+| `tests/test_transaction.py` | Test module | `docs/TESTING.md` | Covered |
+| `tests/test_ingestion_atomicity.py` | Test module | `docs/TESTING.md` | Covered |
+| `tests/test_orchestrator_atomicity.py` | Test module | `docs/TESTING.md` | Covered |
+| `tests/test_embeddings.py` | Test module | `docs/TESTING.md` | Covered |
+| `tests/test_doctor.py` | Test module | `docs/TESTING.md` | Covered |
+| `tests/test_telemetry.py` | Test module | `docs/TESTING.md` | Covered |
 | `tests/test_copilot_cli_eval.py` | Test module | `docs/TESTING.md` | Covered |
 | `tests/test_detailed_agent_eval.py` | Evaluation test module | `docs/TESTING.md` | Covered |
 | `tests/test_large_agent_eval.py` | Evaluation test module | `docs/TESTING.md` | Covered |

@@ -13,6 +13,7 @@ The most important stale-doc correction here is where to look for the graph-nati
 - [../pam/chat_agent.py](../pam/chat_agent.py): chat answer layer that turns PAM retrieval into grounded responses.
 - [../scripts/run_copilot_cli_eval.py](../scripts/run_copilot_cli_eval.py): Copilot CLI evaluation harness that builds a fixed retrieval prompt and scores answers.
 - [../scripts/run_all_copilot_evals.py](../scripts/run_all_copilot_evals.py): thin wrapper that runs the detailed, large, and hard eval suites and emits one combined JSON report.
+- [../scripts/diag_relationship_misses.py](../scripts/diag_relationship_misses.py): diagnostic utility for analyzing relationship-query miss patterns in eval runs.
 
 ### Core Packages
 
@@ -20,6 +21,7 @@ The most important stale-doc correction here is where to look for the graph-nati
 - [../pam/db/nodes.py](../pam/db/nodes.py): node CRUD, serialization, and query filters.
 - [../pam/db/edges.py](../pam/db/edges.py): edge CRUD and relation lookup helpers.
 - [../pam/db/fts.py](../pam/db/fts.py): safe FTS query shaping and candidate search.
+- [../pam/db/transaction.py](../pam/db/transaction.py): SAVEPOINT-aware transaction context manager for atomic multi-step writes.
 - [../pam/ingestion/pipeline.py](../pam/ingestion/pipeline.py): main ingest orchestration, dedupe, enrichment, and graph writes.
 - [../pam/ingestion/extract.py](../pam/ingestion/extract.py): deterministic content extraction for notes, files, and URLs.
 - [../pam/ingestion/entity_linker.py](../pam/ingestion/entity_linker.py): entity matching and draft entity creation.
@@ -29,6 +31,8 @@ The most important stale-doc correction here is where to look for the graph-nati
 - [../pam/retrieval/ranker.py](../pam/retrieval/ranker.py): node and relationship ranking, partitioning, and result shaping.
 - [../pam/lifecycle.py](../pam/lifecycle.py): decay planning, archival, and restore operations.
 - [../pam/feedback.py](../pam/feedback.py): upvote, downvote, pin, and supersede mutations.
+- [../pam/embeddings.py](../pam/embeddings.py): query and node embedding for the vector-retrieval channel — lazy model load, vec-store writes, backfill.
+- [../pam/telemetry.py](../pam/telemetry.py): shared best-effort JSONL log-append helper used by every log-emitting module.
 
 ## Graph-Native Implementation Hotspots
 

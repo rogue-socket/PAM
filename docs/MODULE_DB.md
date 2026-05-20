@@ -1,5 +1,5 @@
 # PAM Module: Database Layer
-### `pam/db/` - `schema.py`, `nodes.py`, `edges.py`, `fts.py`
+### `pam/db/` - `schema.py`, `nodes.py`, `edges.py`, `fts.py`, `transaction.py`
 > Owner: Agent 1 | Depends on: `config.py` | Depended on by: all higher layers
 
 ---
@@ -10,7 +10,7 @@ The database layer owns persistence, schema management, and storage-oriented que
 
 For the updated product framing, the DB layer is not just a persistence utility. It is the graph substrate that makes graph-native personal memory possible.
 
-The live package export surface is defined in `pam/db/__init__.py` and re-exports the node, edge, FTS, and schema helpers.
+The live package export surface is defined in `pam/db/__init__.py` and re-exports the node, edge, FTS, schema, and transaction helpers.
 
 ---
 
@@ -31,18 +31,19 @@ The live package export surface is defined in `pam/db/__init__.py` and re-export
 - `apply_migrations(conn)`
 - `get_current_version(conn)`
 - `check_database_health(conn)`
+- `doctor_report(conn)`
 - `MIGRATIONS`
 
-`get_connection()` is the canonical connection factory. It enables WAL mode, foreign keys, a busy timeout, and `sqlite3.Row` access.
+`get_connection()` is the canonical connection factory. It enables WAL mode, foreign keys, a busy timeout, `sqlite3.Row` access, and attempts a best-effort load of the sqlite-vec extension (non-fatal when it is unavailable).
 
 `resolve_workspace_id()` normalizes workspace scope to an absolute path string. When the caller does not pass a workspace, the current working directory is used.
 
 `initialize()` does two things:
 
-1. creates `schema_version` and applies pending migrations
+1. creates `schema_version` and applies pending migrations (v1 is the node/edge/FTS schema and triggers; v2 adds the `vec_nodes` virtual table and `vec_node_map` for hybrid retrieval — the v2 migration is skipped silently when sqlite-vec is unavailable)
 2. runs compatibility repair for existing databases, including adding and backfilling `workspace_id` when needed
 
-`check_database_health()` is a storage-level consistency check for the `nodes` table and the standalone FTS index. `get_initialized_connection()` invokes it lazily — once per process per resolved DB path (cached in `_HEALTH_CHECKED_PATHS`) — and logs a `WARNING` via the `pam.db.schema` logger when drift is detected (missing or orphaned FTS rows). The check never raises, so callers that handle their own connections (for example, the eval suites) can still call `check_database_health()` directly when they need to assert health rather than just observe it.
+`check_database_health()` is a storage-level consistency check for the `nodes` table and the standalone FTS index. `get_initialized_connection()` invokes it lazily — once per process per resolved DB path (cached in `_HEALTH_CHECKED_PATHS`) — through `_check_health_once()`, which catches `sqlite3.Error` and logs a `WARNING` via the `pam.db.schema` logger instead of re-raising. `check_database_health()` itself does not suppress exceptions; callers that invoke it directly (for example, the eval suites) must handle any error themselves.
 
 ### 2.2 `nodes.py`
 
@@ -89,6 +90,7 @@ Behavioral details that matter to other modules:
 - `update_node()` only accepts fields listed in `UPDATABLE_FIELDS` and always refreshes `updated_at`
 - `list_nodes()` sorts by `valid_at DESC, created_at DESC`
 - `list_nodes(..., since=...)` filters on `valid_at`, not `created_at`
+- `list_nodes(..., limit=None)` removes the row cap and returns all matching nodes; `status` also accepts a sequence, rendered as a SQL `IN (...)` filter
 - `find_by_content_hash()` only returns nodes with status `active`, `draft`, or `reference`
 - `update_importance()` and `bulk_update_importance()` both refresh `updated_at`
 
@@ -135,6 +137,19 @@ Important behavior:
 - FTS queries are sanitized through `_build_safe_match_query()` before they hit SQLite
 - `fts_search()` joins FTS rows back to `nodes`, filters by `status`, `workspace_id`, and `valid_at`, and returns `(node, fts_rank)` tuples
 - `fts_search_entities()` only returns nodes of type `entity`
+
+### 2.5 `transaction.py`
+
+Public helpers:
+
+- `transaction(conn)`
+
+Important behavior:
+
+- `transaction(conn)` is a context manager for atomic multi-step writes — `BEGIN`/`COMMIT` at the top level, and a `SAVEPOINT` when a `transaction()` block is already open
+- on any exception it rolls back the whole block (or to the savepoint when nested) and re-raises
+- the low-level node and edge mutators accept a `commit` keyword so their individual commits can be deferred when they run inside a `transaction()` block
+- `ingest()`, `link_entities_detailed()`, `apply_supersedes()`, `apply_decay()`, and `upvote()` use it so a partial multi-write failure cannot leave the store inconsistent
 
 ---
 

@@ -108,7 +108,7 @@ Public exports:
 
 Important behavior:
 
-- provider selection comes from `config.py`
+- provider selection comes from `config.py` (`LLM_PROVIDER`); supported values are `anthropic`, `openai`, and `claude_code`
 - missing local SDKs raise `LLMUnavailableError` internally and are converted into safe fallbacks
 - `summarize()` returns `""` on failure
 - `extract_entities()` returns `[]` on failure and filters entities to the configured categories and max count
@@ -140,8 +140,9 @@ Important behavior:
 
 - existing entity candidates are pre-filtered with `fts_search_entities()` inside the same workspace
 - matching uses `rapidfuzz` when available and `SequenceMatcher` otherwise
-- new entities are created as `draft` nodes with metadata `{"aliases": [name], "category": category}`
+- new entities are created as `draft` nodes with metadata `{"aliases": [name], "category": category}`, and are embedded via `embed_and_store_node()` right after creation
 - `REFERS_TO` edges are created only after the main node already exists
+- the `content` parameter on both functions is currently accepted but unused (discarded on entry); it is kept for signature stability
 
 ### 2.5 `pipeline.py`
 
@@ -159,21 +160,23 @@ The current pipeline order is:
 
 1. `initialize(conn)`
 2. `normalize(...)`
-3. session staleness warning check
-4. `extract(...)`
-5. short-circuit on dedup hit
-6. `summarize(...)`
-7. `extract_entities(...)`
-8. `generate_edge_fact(...)` for each extracted entity
-9. create the main node
-10. link entities for `event` and `note` nodes
-11. create deterministic `RELATED` edges between memories that now share linked entities
-12. create deterministic `RELATED` edges between co-mentioned entity nodes
-13. infer `DERIVED_FROM`, `SUPERSEDES`, or `CONTRADICTS` for the new memory when explicit cue language matches a nearby shared-entity memory strongly enough
-14. create `DERIVED_FROM` when a source has `parent_note_id`
-15. append ingestion log event
+3. `infer_node_type(...)`
+4. session staleness warning check
+5. `extract(...)`
+6. short-circuit on dedup hit
+7. `summarize(...)`
+8. `extract_entities(...)`
+9. `generate_edge_fact(...)` for each extracted entity
+10. create the main node
+11. embed the main node vector (`_embed_node()`, combining title, summary, content, and entity names) — skipped silently when embeddings are unavailable
+12. link entities for `event` and `note` nodes
+13. create deterministic `RELATED` edges between memories that now share linked entities
+14. create deterministic `RELATED` edges between co-mentioned entity nodes
+15. infer `DERIVED_FROM` or `CONTRADICTS` edges, or call `apply_supersedes()` (which writes a `SUPERSEDES` edge and marks the superseded node as `reference` with dampened importance), when explicit cue language matches a nearby shared-entity memory strongly enough
+16. create `DERIVED_FROM` when a source has `parent_note_id`
+17. append ingestion log event
 
-The main node is intentionally created before entity linking. That ordering is required because `edges` enforces foreign keys and `REFERS_TO` edges point back to the main node.
+Steps 13–15 only run when entity linking produced at least one linked entity. The main node is intentionally created before entity linking — that ordering is required because `edges` enforces foreign keys and `REFERS_TO` edges point back to the main node. Steps 10–16 all execute inside a single `transaction()` block (see 7.2).
 
 ---
 
@@ -308,16 +311,13 @@ The warning check is workspace-scoped and compares the new record's `recorded_at
 
 The check warns through the logger and never aborts ingestion.
 
-### 7.2 Failure cleanup
+### 7.2 Failure atomicity
 
-After the main node is inserted, later linking work is wrapped in a cleanup block.
+The main node insert, node embedding, entity linking, relationship edges, and the source provenance edge are all written inside a single `transaction()` context manager (`pam/db/transaction.py`).
 
-- if entity linking fails, the just-created node is deleted
-- if `parent_note_id` validation fails after node creation, the just-created node is deleted
-
-That keeps the graph from retaining partially-ingested nodes.
-
-As graph construction gets richer, PAM will need broader transaction boundaries so partially-written conceptual edges do not survive failed ingests.
+- if any step raises, the transaction rolls back atomically and the exception is re-raised
+- there is no explicit node-deletion step — rollback undoes the main node along with everything else
+- this keeps the graph from retaining partially-ingested nodes or partially-written conceptual edges
 
 ---
 
